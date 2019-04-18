@@ -13,7 +13,7 @@ train_rate = 0.5
 pic_len = 128
 batch_size = 1
 epoch_num = 1
-input_num = 4
+input_num = 2
 
 print('start')
 
@@ -111,9 +111,9 @@ class TimeFreqDataset(Dataset):
     def __len__(self):
         return self.len
 # 创建data_loader
-train_loader = DataLoader(dataset=TimeFreqDataset(train_data, train_label),
+train_loader = DataLoader(dataset=TimeFreqDataset(test_data, test_label),
                          batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(dataset=TimeFreqDataset(test_data, test_label),
+test_loader = DataLoader(dataset=TimeFreqDataset(train_data, train_label),
                          batch_size=batch_size, shuffle=True)
 
 
@@ -199,12 +199,19 @@ with torch.no_grad():
         outputs = torch.round(outputs)
         #labels = labels.float()
         total += labels.size(0)
+        print(labels.size(0))
         ########################################
         outputs[outputs < 0] = 0
         outputs[outputs > 1] = 1
+        print(outputs)
+        print(labels)
         ########################################
-        correct += (outputs.data == labels).sum().item()
-        loss += abs(outputs.data - labels).sum().item()
+        # correct += (outputs.data == labels).sum().item()
+        # loss += abs(outputs.data - labels).sum().item()
+        tmp_loss = abs(outputs.data - labels).sum().item()
+        if tmp_loss == 0:
+        	correct += 1
+        loss += tmp_loss
 
 print('Accuracy of the network on the 10000 test images: %d %%' % (
     100 * correct / total))

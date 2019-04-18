@@ -1,6 +1,13 @@
+import _thread
 
-import torch
-a = torch.Tensor([[1,2,3]])
-b = torch.cat((a, torch.Tensor([[2, 3, 4]])))
-print(b)
-print(a)
+def function():
+	count = 0
+	while count < 5:
+		print(count)
+		count += 1
+
+if __name__ == '__main__':
+	_thread.start_new_thread(function, ())
+	while 1:
+		pass
+
