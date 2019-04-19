@@ -170,7 +170,7 @@ class Net(nn.Module):
         x = self.pool(F.relu(self.conv2(x)))
         x = (F.relu(self.conv3(x)))
         x = (F.relu(self.conv4(x)))
-        x = x.view(-1, 6 * self.linear_len * self.linear_len)
+        x = x.view(-1, 8 * self.linear_len * self.linear_len)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
@@ -231,12 +231,12 @@ def train():
 
                 # print statistics
                 running_loss += loss.item()
-                if i % 500 == 499:    # print every 2000 mini-batches
+                if i % 20 == 19:    # print every 2000 mini-batches
                     # print('[%d, %5d] loss: %.3f' %
                     #       (epoch + 1, i + 1, running_loss / 500))
                     with open('record', 'a') as f:
                         f.write('[%d, %5d] loss: %.3f\n\n' %
-                            (epoch + 1, i + 1, running_loss / 500))
+                            (epoch + 1, i + 1, running_loss / 20))
                     running_loss = 0.0
 
 
