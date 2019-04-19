@@ -143,7 +143,7 @@ class TimeFreqDataset(Dataset):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(2, 6, 5)
+        self.conv1 = nn.Conv2d(1, 6, 5)
         self.norm1 = nn.BatchNorm2d(6)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 6, 5)
@@ -157,17 +157,64 @@ class Net(nn.Module):
         self.fc3 = nn.Linear(100, 20)
         self.fc4 = nn.Linear(20, 18)
 
+
+        self.conv1_2 = nn.Conv2d(1, 6, 5)
+        self.conv2_2 = nn.Conv2d(6, 6, 5)
+        self.conv3_2 = nn.Conv2d(6, 6, 7)
+        self.conv4_2 = nn.Conv2d(6, 6, 5)
+        linear_len_2 = int(((((pic_len - 4) / 2 - 4) / 2 - 6) / 2 - 4) / 2)
+        self.linear_len_2 = linear_len_2
+        self.fc1_2 = nn.Linear(6 * linear_len_2 * linear_len_2, 500)
+        self.fc2_2 = nn.Linear(500, 100)
+        self.fc3_2 = nn.Linear(100, 20)
+        self.fc4_2 = nn.Linear(20, 18)
+
+
+        self.conv1_3 = nn.Conv2d(1, 6, 5)
+        self.conv2_3 = nn.Conv2d(6, 6, 5)
+        self.conv3_3 = nn.Conv2d(6, 6, 7)
+        self.conv4_3 = nn.Conv2d(6, 6, 5)
+        linear_len_3 = int(((((pic_len - 4) / 2 - 4) / 2 - 6) / 2 - 4) / 2)
+        self.linear_len_3 = linear_len_3
+        self.fc1_3 = nn.Linear(6 * linear_len_3 * linear_len_3, 500)
+        self.fc2_3 = nn.Linear(500, 100)
+        self.fc3_3 = nn.Linear(100, 20)
+        self.fc4_3 = nn.Linear(20, 18)
+
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-        x = self.pool(F.relu(self.conv4(x)))
-        x = x.view(-1, 6 * self.linear_len * self.linear_len)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
-        return x
+        first = x[:, 0]
+        second = x[:, 1]
+        third = x[:, 2]
+        first = self.pool(F.relu(self.conv1(first)))
+        first = self.pool(F.relu(self.conv2(first)))
+        first = self.pool(F.relu(self.conv3(first)))
+        first = self.pool(F.relu(self.conv4(first)))
+        first = first.view(-1, 6 * self.linear_len * self.linear_len)
+        first = F.relu(self.fc1(first))
+        first = F.relu(self.fc2(first))
+        first = F.relu(self.fc3(first))
+        first = F.relu(self.fc4(first))
+
+        second = self.pool(F.relu(self.conv1_2(second)))
+        second = self.pool(F.relu(self.conv2_2(second)))
+        second = self.pool(F.relu(self.conv3_2(second)))
+        second = self.pool(F.relu(self.conv4_2(second)))
+        second = second.view(-1, 6 * self.linear_len * self.linear_len)
+        second = F.relu(self.fc1_2(second))
+        second = F.relu(self.fc2_2(second))
+        second = F.relu(self.fc3_2(second))
+        second = F.relu(self.fc4_2(second))
+
+        third = self.pool(F.relu(self.conv1_3(third)))
+        third = self.pool(F.relu(self.conv2_3(third)))
+        third = self.pool(F.relu(self.conv3_3(third)))
+        third = self.pool(F.relu(self.conv4_3(third)))
+        third = third.view(-1, 6 * self.linear_len * self.linear_len)
+        third = F.relu(self.fc1_3(third))
+        third = F.relu(self.fc2_3(third))
+        third = F.relu(self.fc3_3(third))
+        third = F.relu(self.fc4_3(third))
+        return first + second + third
 
 
 net = Net()
