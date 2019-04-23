@@ -265,7 +265,7 @@ def train():
 
                 # forward + backward + optimize
                 outputs = net(inputs)
-                outputs = torch.round(outputs)
+                # outputs = torch.round(outputs)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -278,7 +278,7 @@ def train():
                     # with open('record', 'a') as f:
                     #     f.write('[%d, %5d] loss: %.3f\n\n' %
                     #         (epoch + 1, i + 1, running_loss / 2000))
-                    if last_loss >= running_loss:
+                    if last_loss <= running_loss:
                         loss_state_cnt += 1
                         if loss_state_cnt >= 10:
                             optimizer.param_groups[0]['lr'] *= 0.1

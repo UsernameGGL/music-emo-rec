@@ -20,11 +20,11 @@ with open('record', 'a') as f:
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
 pic_len = 256           # 图片长度
-batch_size = 100         
-epoch_num = 1
+batch_size = 50         
+epoch_num = 10
 # input_num = 2
 interval = 500            # 窗口间隔
-part_data_num = 5000     # 每一次训读入的数据
+part_data_num = 1000     # 每一次训读入的数据
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
 
@@ -99,8 +99,8 @@ def transfer_data():
         line.pop()
         line = list(map(int, line))
         line_len = len(line)
-        # with open('record', 'a') as f:
-        #     f.write(str(line_len) + '\n')
+        with open('record', 'a') as f:
+            f.write(str(line_len) + '\n')
         # print(line_len)
         sample_start = 0
         sample_len = pic_len*pic_len
@@ -124,7 +124,7 @@ def transfer_data():
                     test_data_has_refreshed = True
             while true_data_len == part_data_num:
                 time.sleep(1)
-        if slice_num >= train_slice_num:
+        if slice_num >= train_slice_num - 1:
             train_or_test = 'test'
             train_data_is_left = False
     input_file.close()    
@@ -199,11 +199,6 @@ def train():
     global true_data_len
     global part_data_num
     global device
-    global slice_num
-    global train_slice_num
-    last_loss = 0
-    loss_state_cnt = 0
-    needed_train_cnt = 0
     for epoch in range(epoch_num):  # loop over the dataset multiple times
         while train_data_is_left:
             if not train_data_has_refreshed:
@@ -242,17 +237,6 @@ def train():
                     with open('record', 'a') as f:
                         f.write('[%d, %5d] loss: %.3f\n\n' %
                             (epoch + 1, i + 1, running_loss / 20))
-                    if last_loss <= running_loss:
-                        loss_state_cnt += 1
-                        if loss_state_cnt >= 10:
-                            optimizer.param_groups[0]['lr'] *= 0.1
-                            loss_state_cnt = 0
-                            needed_train_cnt += 1
-                            if needed_train_cnt >= 10:
-                                slice_num = train_slice_num
-                    else:
-                        needed_train_cnt = 0
-                    last_loss = running_loss
                     running_loss = 0.0
 
 
