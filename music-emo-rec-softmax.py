@@ -6,7 +6,6 @@ import csv
 import time
 import _thread
 import statistics
-import os
 from torch.utils.data import Dataset, DataLoader
 # from torchvision import transforms
 # from torchvision.utils import save_image
@@ -19,8 +18,8 @@ pic_len = 256           # 图片长度
 batch_size = 100
 epoch_num = 1
 # input_num = 2
-interval = 1000            # 窗口间隔
-part_data_num = 1000     # 每一次训读入的数据
+interval = 3000            # 窗口间隔
+part_data_num = 6000     # 每一次训读入的数据
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device('cpu')
 
@@ -69,7 +68,6 @@ train_data_has_refreshed = False
 test_data_has_refreshed = False
 slice_num = 0
 
-
 def transfer_data():
     # global slice_num
     # global input_slice
@@ -87,22 +85,28 @@ def transfer_data():
     global test_data_has_refreshed
     global slice_num
     global total_slice_num
-    path = 'E:/data/cal500/music-data/'
-    sliceDir = os.listdir(path=path)
-    sample_len = pic_len*pic_len
-    for sliceFNama in sliceDir:
-        slice_file = open(path + sliceFNama, 'r')
-        slice_reader = csv.reader(slice_file)
-        slices = list(slice_reader)
+    # 读入音频数据，计算数据行数
+    input_file = open('../data/cal500/prodAudios_v2.txt', 'r')
+    input_lines = input_file.readlines()
+    # create_inp_list = True
+    for line in input_lines:
         slice_num += 1
-        for one_slice in slices:
-            if not one_slice:
-                continue
-            one_slice = list(map(float, one_slice))
-            time_data = one_slice[0: sample_len]
-            freq_data = one_slice[sample_len: len(one_slice)-1]
+        line = line.split(' ')
+        line.pop()
+        line = list(map(int, line))
+        line_len = len(line)
+        # print(line_len)
+        # print(line_len)
+        sample_start = 0
+        sample_len = pic_len*pic_len
+        while sample_start + sample_len <= line_len:
+            time_data = line[sample_start: sample_start + sample_len]
+            freq_data = abs(np.fft.fft(time_data)/sample_len)
+            # freq_data[0] = statistics.mean(freq_data[1:])
+            # #######################################here
             time_data = np.array(time_data).reshape(pic_len, pic_len)
             freq_data = np.array(freq_data).reshape(pic_len, pic_len)
+            sample_start += interval
             if train_or_test == 'train':
                 train_data[true_data_len] = torch.Tensor([time_data, freq_data])
                 train_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
@@ -116,16 +120,14 @@ def transfer_data():
                 else:
                     test_data_has_refreshed = True
             while true_data_len == part_data_num:
-                time.sleep(0.5)
-        if train_data_is_left and slice_num >= train_slice_num:
+                time.sleep(0.01)
+        if slice_num >= train_slice_num:
             train_or_test = 'test'
             train_data_is_left = False
         if slice_num >= total_slice_num:
             break
-        slice_file.close()
+    input_file.close()
     test_data_is_left = False
-
-
 
 # 重写Dataset类
 class TimeFreqDataset(Dataset):
@@ -207,7 +209,7 @@ def train():
     for epoch in range(epoch_num):  # loop over the dataset multiple times
         while train_data_is_left:
             if not train_data_has_refreshed:
-                time.sleep(0.5)
+                time.sleep(0.01)
                 continue
             if true_data_len < part_data_num:
                 batch_size = 1
@@ -299,6 +301,8 @@ def test():
             tmp_test_label = test_label.clone()
             test_loader = DataLoader(dataset=TimeFreqDataset(tmp_test_data, tmp_test_label),
                          batch_size=batch_size, shuffle=True)
+
+            cnt = 0
             for data in test_loader:
                 images, labels = data
                 images = images.to(device)
@@ -307,16 +311,20 @@ def test():
                 # print(1, outputs)
                 # ####################################################here
                 # outputs = sigmoid(outputs)
-                print(2, outputs)
+                # print(2, outputs)
+
+                cnt += 1
+
                 outputs = torch.round(outputs)
-                print(3, outputs)
+                if cnt%500 == 499:
+                    print(3, outputs)
                 #labels = labels.float()
                 total += labels.size(0)
-                print(total)
                 ########################################
                 outputs[outputs < 0] = 0
                 outputs[outputs > 1] = 1
-                # print(4, outputs)
+                if cnt%500 == 499:
+                    print(4, outputs)
                 ########################################
                 correct += (outputs.data == labels).sum().item()
                 # loss += abs(outputs.data - labels).sum().item()
@@ -326,7 +334,7 @@ def test():
                 loss += tmp_loss
 
     print('Accuracy of the network on the test images: %d %%' % (
-        100 * correct / total / 18))
+        100 * correct / total))
     print('Loss of the network: {}'.format(loss))
     print('My_Accuracy of the network on the test images: %d %%' % (
         100 * correct_v2 / total))
