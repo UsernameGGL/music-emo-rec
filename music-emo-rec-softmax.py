@@ -12,14 +12,14 @@ from torch.utils.data import Dataset, DataLoader
 
 
 # train_rate = 0.8
-train_slice_num = 2222  # 用来训练的曲子数
+train_slice_num = 2223  # 用来训练的曲子数
 total_slice_num = train_slice_num + 1000
 pic_len = 256           # 图片长度
 batch_size = 100
 epoch_num = 1
 # input_num = 2
 interval = 3000            # 窗口间隔
-part_data_num = 6000     # 每一次训读入的数据
+part_data_num = 5000     # 每一次训读入的数据
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device('cpu')
 
@@ -311,20 +311,18 @@ def test():
                 # print(1, outputs)
                 # ####################################################here
                 # outputs = sigmoid(outputs)
-                # print(2, outputs)
+                print(2, sum(outputs[outputs > 0.5]))
 
                 cnt += 1
 
                 outputs = torch.round(outputs)
-                if cnt%500 == 499:
-                    print(3, outputs)
+                print(3, sum(outputs[outputs == 1]))
                 #labels = labels.float()
                 total += labels.size(0)
                 ########################################
-                outputs[outputs < 0] = 0
-                outputs[outputs > 1] = 1
-                if cnt%500 == 499:
-                    print(4, outputs)
+                # outputs[outputs < 0] = 0
+                # outputs[outputs > 1] = 1
+                # print(4, outputs)
                 ########################################
                 correct += (outputs.data == labels).sum().item()
                 # loss += abs(outputs.data - labels).sum().item()
@@ -334,7 +332,7 @@ def test():
                 loss += tmp_loss
 
     print('Accuracy of the network on the test images: %d %%' % (
-        100 * correct / total))
+        100 * correct / total / 18))
     print('Loss of the network: {}'.format(loss))
     print('My_Accuracy of the network on the test images: %d %%' % (
         100 * correct_v2 / total))
