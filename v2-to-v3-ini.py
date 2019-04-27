@@ -6,7 +6,7 @@ import statistics
 pic_len = 256
 interval = 3000
 
-output_dir = 'E:/data/cal500/music-data-v2/'
+output_dir = 'E:/data/cal500/music-data-v3/'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
@@ -54,9 +54,9 @@ for i in range(length):
     while sample_start + sample_len <= line_len:
         time_data = line[sample_start: sample_start + sample_len]
         freq_data = abs(np.fft.fft(time_data) / sample_len)
-        for j in range(len(freq_data)):
-            freq_data[i] = round(freq_data[j], 4)
-        end_data = round(statistics.mean(freq_data[1:]), 4)
+        # for j in range(len(freq_data)):
+        #     freq_data[i] = round(freq_data[j], 4)
+        end_data = statistics.mean(freq_data[1:])
         sample_start += interval
         # #########################
         # notice!: time data - freq data - and then mean of freq[1:] in one row
