@@ -1,26 +1,66 @@
-import torch
-import torch.nn as nn
-# import torch.gather as gather
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(2, 6, 5)
-        self.norm1 = nn.BatchNorm2d(6)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 6, 5)
-        self.norm2 = nn.BatchNorm2d(16)
-        self.conv3 = nn.Conv2d(6, 6, 7)
-        self.conv4 = nn.Conv2d(6, 6, 5)
+import os
+import csv
 
-    def forward(self, x):
-        print(x)
-        print(x[0])
-        b = x[0][0][0][0]
-        print(b)
-        return x
+pic_len = 256
+path = 'E:/data/cal500/music-data/'
+sliceDir = os.listdir(path=path)
+sample_len = pic_len * pic_len
+slice_num = 0
 
-a = torch.Tensor([[[[1,1],[2,2]],[[3,3],[4,4]]],[[[5,5],[6,6]],[[7,7],[8,8]]]])
-# print(a)
-net = Net()
-net(a)
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        pass
+    try:
+        import unicodedata
+        unicodedata.numeric(s)
+        return True
+    except(TypeError, ValueError):
+        pass
+    return False
+
+
+for sliceFNama in sliceDir:
+    slice_file = open(path + sliceFNama, 'r')
+    slice_reader = csv.reader(slice_file)
+    slices = list(slice_reader)
+    slice_num += 1
+    cnt = 0
+    for one_slice in slices:
+        if not one_slice:
+            continue
+        cnt += 1
+        # one_slice = list(map(float, one_slice))
+        cnt_2 = 0
+        for num in one_slice:
+            cnt_2 += 1
+            if not is_number(num):
+                print(cnt_2)
+                print(num)
+                print("processing the {} samples of {} slices".format(cnt, slice_num))
+
+# path = 'E:/data/cal500/music-data/'
+# sliceDir = os.listdir(path=path)
+# pic_len = 256
+# sample_len = pic_len*pic_len
+# slice_file = open(path + '000564.csv')
+# slice_reader = csv.reader(slice_file)
+# slices = list(slice_reader)
+# cnt = 0
+# for one_slice in slices:
+#     if not one_slice:
+#         continue
+#     cnt += 1
+#     if cnt == 17:
+#         print(len(one_slice))
+#         cnt_2 = 0
+#         for num in one_slice:
+#             cnt_2 += 1
+#             if not is_number(num):
+#                 print(cnt_2)
+#                 print(num)
+#
+#         break

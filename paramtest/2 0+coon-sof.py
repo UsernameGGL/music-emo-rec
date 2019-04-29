@@ -5,13 +5,13 @@ import torch.nn.functional as F
 import csv
 import time
 import _thread
-import os
 from torch.utils.data import Dataset, DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*12)
+time.sleep(3600*24)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -33,7 +33,7 @@ print('start')
 #     f.write('slice_num is {}\nmusic input end, start to label\n'.format(slice_num))
 
 # 读入label
-label_file = open('../data/cal500/prodLabels.csv', 'r')
+label_file = open('../../data/cal500/prodLabels.csv', 'r')
 label_reader = csv.reader(label_file)
 # print(list(label_reader)[0:5])
 reader_list = list(label_reader)
@@ -215,7 +215,7 @@ class Net(nn.Module):
         # third = F.relu(self.fc3_3(third))
         # third = F.relu(self.fc4_3(third))
         # return first + second + third
-        y = first + second
+        y = F.softmax(first + second)
         return y
 
 
@@ -225,8 +225,10 @@ net = Net()
 net.to(device)
 
 # criterion = nn.CrossEntropyLoss()
-criterion = nn.BCEWithLogitsLoss()
+# criterion = nn.BCEWithLogitsLoss()
+criterion = nn.BCELoss()  # ##################################################### here
 optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.1)
+scheduler = ReduceLROnPlateau(optimizer, 'min')
 
 
 def train():
@@ -270,6 +272,8 @@ def train():
                 outputs = net(inputs)
                 # outputs = torch.round(outputs)
                 loss = criterion(outputs, labels)
+                ######################################################
+                scheduler.step(loss)
                 loss.backward()
                 optimizer.step()
 
