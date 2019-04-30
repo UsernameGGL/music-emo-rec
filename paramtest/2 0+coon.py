@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*12)
+# time.sleep(3600*12)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -85,28 +85,34 @@ def transfer_data():
     global test_data_has_refreshed
     global slice_num
     global total_slice_num
-    path = 'E:/data/cal500/music-data-v2/'
-    sliceDir = os.listdir(path=path)
-    sample_len = pic_len*pic_len
-    for sliceFNama in sliceDir:
-        slice_file = open(path + sliceFNama, 'r')
-        slice_reader = csv.reader(slice_file)
-        slices = list(slice_reader)
+    # 读入音频数据，计算数据行数
+    input_file = open('../../data/cal500/prodAudios_v2.txt', 'r')
+    input_lines = input_file.readlines()
+    # create_inp_list = True
+    for line in input_lines:
         slice_num += 1
-        for one_slice in slices:
-            if not one_slice:
-                continue
-            one_slice = list(map(float, one_slice))
-            time_data = one_slice[0: sample_len]
-            freq_data = one_slice[sample_len: len(one_slice)-1]
+        line = line.split(' ')
+        line.pop()
+        line = list(map(int, line))
+        line_len = len(line)
+        # print(line_len)
+        # print(line_len)
+        sample_start = 0
+        sample_len = pic_len*pic_len
+        while sample_start + sample_len <= line_len:
+            time_data = line[sample_start: sample_start + sample_len]
+            freq_data = abs(np.fft.fft(time_data)/sample_len)
+            # freq_data[0] = statistics.mean(freq_data[1:])
+            # #######################################here
             time_data = np.array(time_data).reshape(pic_len, pic_len)
             freq_data = np.array(freq_data).reshape(pic_len, pic_len)
+            sample_start += interval
             if train_or_test == 'train':
                 train_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                train_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
+                train_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
             else:
                 test_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                test_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
+                test_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
             true_data_len += 1
             if true_data_len == part_data_num:
                 if train_or_test == 'train':
@@ -114,13 +120,13 @@ def transfer_data():
                 else:
                     test_data_has_refreshed = True
             while true_data_len == part_data_num:
-                time.sleep(0.5)
-        if train_data_is_left and slice_num >= train_slice_num:
+                time.sleep(1)
+        if slice_num >= train_slice_num:
             train_or_test = 'test'
             train_data_is_left = False
         if slice_num >= total_slice_num:
             break
-        slice_file.close()
+    input_file.close()
     test_data_is_left = False
 
 
@@ -293,6 +299,7 @@ def train():
                     running_loss = 0.0
 
     print('Finished Training')
+    torch.save(net.state_dict(), '0 0+coon.pt')
 
 
 def test():
@@ -335,11 +342,7 @@ def test():
 
                 cnt += 1
 
-                if(cnt % 100 == 99):
-                    print(1, outputs)
                 outputs = torch.round(outputs)
-                if(cnt % 100 == 99):
-                    print(2, outputs)
                 # labels = labels.float()
                 total += labels.size(0)
                 #########################################################
@@ -354,10 +357,10 @@ def test():
                 if tmp_loss == 0:
                     correct_v2 += 1
                 loss += tmp_loss
-                label_batch = labels.size(0)
-                batch_len = labels.size(1)
-                for k in range(label_batch):
-                    for kk in range(batch_len):
+                # label_batch = labels.size(0)
+                # batch_len = labels.size(1)
+                for k in range(batch_size):
+                    for kk in range(label_len):
                         if labels[k][kk] == 1 and outputs[k][kk] == 1:
                             correct_v3 += 1
 

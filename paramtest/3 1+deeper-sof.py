@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*24)
+# time.sleep(3600*24)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -153,15 +153,15 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(2, 6, 5)
+        self.conv5 = nn.Conv2d(6, 6, 3)
         self.norm1 = nn.BatchNorm2d(6)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.norm2 = nn.BatchNorm2d(16)
         self.conv3 = nn.Conv2d(16, 16, 7)
-        self.conv5 = nn.Conv2d(16, 16, 5)
         self.conv4 = nn.Conv2d(16, 8, 5)
         self.norm3 = nn.BatchNorm2d(8)
-        linear_len = int(((pic_len - 4) / 2 - 4) / 2 - 6 - 4 - 4*30)
+        linear_len = int(((pic_len - 4) / 2 - 2*10 - 4) / 2 - 6 - 4)
         self.linear_len = linear_len
         self.fc1 = nn.Linear(8 * linear_len * linear_len, 500)
         self.norm4 = nn.BatchNorm1d(num_features=500)
@@ -176,13 +176,13 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.norm1(x)
+        for i in range(10):
+            x = F.relu(self.conv5(x))
+            x = self.norm2(x)
         x = self.pool(F.relu(self.conv2(x)))
         x = self.norm2(x)
         x = (F.relu(self.conv3(x)))
         x = self.norm2(x)
-        for i in range(30):
-            x = F.relu(self.conv5(x))
-            x = self.norm2(x)
         x = (F.relu(self.conv4(x)))
         x = self.norm3(x)
         x = x.view(-1, 8 * self.linear_len * self.linear_len)
@@ -271,6 +271,7 @@ def train():
 
 
     print('Finished Training')
+    torch.save(net.state_dict(), '3 1+deeper-sof.pt')
 
 
 def test():
@@ -311,9 +312,9 @@ def test():
                 # print(1, outputs)
                 # ####################################################here
                 # outputs = sigmoid(outputs)
-                print(2, outputs)
+                # print(2, outputs)
                 outputs = torch.round(outputs)
-                print(3, outputs)
+                # print(3, outputs)
                 #labels = labels.float()
                 total += labels.size(0)
                 ########################################
@@ -330,8 +331,8 @@ def test():
                     correct_v2 += 1
                 loss += tmp_loss
                 ####################################
-                for k in range(label_batch):
-                    for kk in range(batch_len):
+                for k in range(batch_size):
+                    for kk in range(label_len):
                         if labels[k][kk] == 1 and outputs[k][kk] == 1:
                             correct_v3 += 1
 

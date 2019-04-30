@@ -126,6 +126,7 @@ def transfer_data():
             break
         slice_file.close()
     test_data_is_left = False
+    torch.save(net.state_dict(), '0 justreducelr.pt')
 
 
 
@@ -311,8 +312,8 @@ def test():
                     correct_v2 += 1
                 loss += tmp_loss
                 ####################################
-                for k in range(label_batch):
-                    for kk in range(batch_len):
+                for k in range(batch_size):
+                    for kk in range(label_len):
                         if labels[k][kk] == 1 and outputs[k][kk] == 1:
                             correct_v3 += 1
 

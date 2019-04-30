@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*24)
+# time.sleep(3600*24)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -252,6 +252,7 @@ def train():
 
 
     print('Finished Training')
+    torch.save(net.state_dict(), '0 justreducelr-sof.pt')
 
 
 def test():
@@ -292,9 +293,9 @@ def test():
                 # print(1, outputs)
                 # ####################################################here
                 # outputs = sigmoid(outputs)
-                print(2, outputs)
+                # print(2, outputs)
                 outputs = torch.round(outputs)
-                print(3, outputs)
+                # print(3, outputs)
                 #labels = labels.float()
                 total += labels.size(0)
                 ########################################
@@ -311,8 +312,8 @@ def test():
                     correct_v2 += 1
                 loss += tmp_loss
                 ####################################
-                for k in range(label_batch):
-                    for kk in range(batch_len):
+                for k in range(batch_size):
+                    for kk in range(label_len):
                         if labels[k][kk] == 1 and outputs[k][kk] == 1:
                             correct_v3 += 1
 
