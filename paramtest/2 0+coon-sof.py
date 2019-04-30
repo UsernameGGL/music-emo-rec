@@ -66,6 +66,7 @@ train_data_is_left = True
 test_data_is_left = True
 train_data_has_refreshed = False
 test_data_has_refreshed = False
+slice_num = 0
 
 
 def transfer_data():

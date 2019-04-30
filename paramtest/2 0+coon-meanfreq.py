@@ -86,28 +86,24 @@ def transfer_data():
     global test_data_has_refreshed
     global slice_num
     global total_slice_num
-    # 读入音频数据，计算数据行数
-    input_file = open('../../data/cal500/prodAudios_v2.txt', 'r')
-    input_lines = input_file.readlines()
-    # create_inp_list = True
-    for line in input_lines:
+    path = 'E:/data/cal500/music-data-v2/'
+    sliceDir = os.listdir(path=path)
+    sample_len = pic_len*pic_len
+    for sliceFNama in sliceDir:
+        slice_file = open(path + sliceFNama, 'r')
+        slice_reader = csv.reader(slice_file)
+        slices = list(slice_reader)
         slice_num += 1
-        line = line.split(' ')
-        line.pop()
-        line = list(map(int, line))
-        line_len = len(line)
-        # print(line_len)
-        # print(line_len)
-        sample_start = 0
-        sample_len = pic_len*pic_len
-        while sample_start + sample_len <= line_len:
-            time_data = line[sample_start: sample_start + sample_len]
-            freq_data = abs(np.fft.fft(time_data)/sample_len)
-            # freq_data[0] = statistics.mean(freq_data[1:])
-            # #######################################here
+        for one_slice in slices:
+            if not one_slice:
+                continue
+            one_slice = list(map(float, one_slice))
+            time_data = one_slice[0: sample_len]
+            freq_data = one_slice[sample_len: len(one_slice)-1]
+            freq_data[0] = one_slice[len(one_slice)-1]
             time_data = np.array(time_data).reshape(pic_len, pic_len)
             freq_data = np.array(freq_data).reshape(pic_len, pic_len)
-            sample_start += interval
+            freq_data[0] = one_slice[len(one_slice)-1]
             if train_or_test == 'train':
                 train_data[true_data_len] = torch.Tensor([time_data, freq_data])
                 train_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
@@ -121,13 +117,13 @@ def transfer_data():
                 else:
                     test_data_has_refreshed = True
             while true_data_len == part_data_num:
-                time.sleep(1)
-        if slice_num >= train_slice_num:
+                time.sleep(0.5)
+        if train_data_is_left and slice_num >= train_slice_num:
             train_or_test = 'test'
             train_data_is_left = False
         if slice_num >= total_slice_num:
             break
-    input_file.close()
+        slice_file.close()
     test_data_is_left = False
 
 
@@ -300,7 +296,7 @@ def train():
                     running_loss = 0.0
 
     print('Finished Training')
-    torch.save(net.state_dict(), '0 0+coon.pt')
+    torch.save(net.state_dict(), '0 0+coon-meanfreq.pt')
 
 
 def test():
@@ -321,6 +317,8 @@ def test():
     cnt = 0
     my_total = 0
     correct_v3 = 0
+    correct_v4 = 0
+    total_v4 = 0
     with torch.no_grad():
         while test_data_is_left:
             if not test_data_has_refreshed:
@@ -342,6 +340,14 @@ def test():
                 outputs = sigmoid(outputs)
 
                 cnt += 1
+
+                for k in range(batch_size):
+                    _, index = torch.sort(outputs[k])
+                    emotion_num = torch.sum(labels[k])
+                    total_v4 += emotion_num
+                    for kk in range(emotion_num):
+                        if labels[k][index[kk]] == 1:
+                            correct_v4 += 1
 
                 outputs = torch.round(outputs)
                 # labels = labels.float()
@@ -372,6 +378,8 @@ def test():
             100 * correct_v2 / total))
     print('My_Accuracy_2 of the network on the test images: %d %%' % (
             100 * correct_v3 / my_total))
+    print('My_Accuracy_4 of the network on the test images: %d %%' % (
+            100 * correct_v4 / total_v4))
 
 
 if __name__ == "__main__":
