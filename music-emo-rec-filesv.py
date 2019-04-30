@@ -87,7 +87,7 @@ def transfer_data():
     global test_data_has_refreshed
     global slice_num
     global total_slice_num
-    path = 'E:/data/cal500/music-data/'
+    path = 'E:/data/cal500/music-data-v2/'
     sliceDir = os.listdir(path=path)
     sample_len = pic_len*pic_len
     for sliceFNama in sliceDir:
@@ -286,6 +286,8 @@ def test():
     total = 0
     loss = 0
     sigmoid = nn.Sigmoid()
+    my_total = 0
+    correct_v3 = 0
     with torch.no_grad():
         while test_data_is_left:
             if not test_data_has_refreshed:
@@ -324,12 +326,19 @@ def test():
                 if tmp_loss == 0:
                     correct_v2 += 1
                 loss += tmp_loss
+                #######################################
+                for k in range(batch_size):
+                    for kk in range(label_len):
+                        if labels[k][kk] == 1 and outputs[k][kk] == 1:
+                            correct_v3 += 1
 
     print('Accuracy of the network on the test images: %d %%' % (
         100 * correct / total / 18))
     print('Loss of the network: {}'.format(loss))
     print('My_Accuracy of the network on the test images: %d %%' % (
         100 * correct_v2 / total))
+    print('My_Accuracy_2 of the network on the test images: %d %%' % (
+            100 * correct_v3 / my_total))
 
 
 
