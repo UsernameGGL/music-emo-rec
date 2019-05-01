@@ -107,7 +107,7 @@ def transfer_data():
         while sample_start + sample_len <= line_len:
             time_data = line[sample_start: sample_start + sample_len]
             freq_data = abs(np.fft.fft(time_data)/sample_len)
-            # freq_data[0] = statistics.mean(freq_data[1:])
+            freq_data[0] = statistics.mean(freq_data[1:])
             # #######################################here
             time_data = np.array(time_data).reshape(pic_len, pic_len)
             freq_data = np.array(freq_data).reshape(pic_len, pic_len)

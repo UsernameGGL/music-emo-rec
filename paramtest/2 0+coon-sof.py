@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*8)
+# time.sleep(3600*8)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -90,39 +90,43 @@ def transfer_data():
     path = 'E:/data/cal500/music-data-v2/'
     sliceDir = os.listdir(path=path)
     sample_len = pic_len*pic_len
-    for sliceFNama in sliceDir:
-        slice_file = open(path + sliceFNama, 'r')
-        slice_reader = csv.reader(slice_file)
-        slices = list(slice_reader)
-        slice_num += 1
-        for one_slice in slices:
-            if not one_slice:
-                continue
-            one_slice = list(map(float, one_slice))
-            time_data = one_slice[0: sample_len]
-            freq_data = one_slice[sample_len: len(one_slice)-1]
-            time_data = np.array(time_data).reshape(pic_len, pic_len)
-            freq_data = np.array(freq_data).reshape(pic_len, pic_len)
-            if train_or_test == 'train':
-                train_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                train_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
-            else:
-                test_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                test_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
-            true_data_len += 1
-            if true_data_len == part_data_num:
+    for ii in range(epoch_num):
+        for sliceFNama in sliceDir:
+            slice_file = open(path + sliceFNama, 'r')
+            slice_reader = csv.reader(slice_file)
+            slices = list(slice_reader)
+            slice_num += 1
+            for one_slice in slices:
+                if not one_slice:
+                    continue
+                one_slice = list(map(float, one_slice))
+                time_data = one_slice[0: sample_len]
+                freq_data = one_slice[sample_len: len(one_slice) - 1]
+                time_data = np.array(time_data).reshape(pic_len, pic_len)
+                freq_data = np.array(freq_data).reshape(pic_len, pic_len)
+                freq_data[0] = statistics.mean(freq_data[1:])
                 if train_or_test == 'train':
-                    train_data_has_refreshed = True
+                    train_data[true_data_len] = torch.Tensor([time_data, freq_data])
+                    train_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
                 else:
-                    test_data_has_refreshed = True
-            while true_data_len == part_data_num:
-                time.sleep(0.5)
-        if train_data_is_left and slice_num >= train_slice_num:
-            train_or_test = 'test'
-            train_data_is_left = False
-        if slice_num >= total_slice_num:
-            break
-        slice_file.close()
+                    test_data[true_data_len] = torch.Tensor([time_data, freq_data])
+                    test_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
+                true_data_len += 1
+                if true_data_len == part_data_num:
+                    if train_or_test == 'train':
+                        train_data_has_refreshed = True
+                    else:
+                        test_data_has_refreshed = True
+                while true_data_len == part_data_num:
+                    time.sleep(0.5)
+            if train_data_is_left and slice_num >= train_slice_num:
+                if not ii == epoch_num - 1:
+                    continue
+                train_or_test = 'test'
+                train_data_is_left = False
+            if slice_num >= total_slice_num:
+                break
+            slice_file.close()
     test_data_is_left = False
 
 
@@ -247,54 +251,54 @@ def train():
     global device
     # last_loss = 0
     # loss_state_cnt = 0
-    for epoch in range(epoch_num):  # loop over the dataset multiple times
-        while train_data_is_left:
-            if not train_data_has_refreshed:
-                time.sleep(0.5)
-                continue
-            if true_data_len < part_data_num:
-                batch_size = 1
-            train_data_has_refreshed = False
-            true_data_len = 0
-            tmp_train_data = train_data.clone()
-            tmp_train_label = train_label.clone()
-            train_loader = DataLoader(dataset=TimeFreqDataset(tmp_train_data, tmp_train_label),
-                                      batch_size=batch_size, shuffle=True)
-            running_loss = 0.0
-            for i, data in enumerate(train_loader, 0):
-                # get the inputs
-                inputs, labels = data
-                inputs = inputs.to(device)
-                labels = labels.to(device)
+    # for epoch in range(epoch_num):  # loop over the dataset multiple times
+    #
+    while train_data_is_left:
+        if not train_data_has_refreshed:
+            time.sleep(0.5)
+            continue
+        if true_data_len < part_data_num:
+            batch_size = 1
+        train_data_has_refreshed = False
+        true_data_len = 0
+        tmp_train_data = train_data.clone()
+        tmp_train_label = train_label.clone()
+        train_loader = DataLoader(dataset=TimeFreqDataset(tmp_train_data, tmp_train_label),
+                                  batch_size=batch_size, shuffle=True)
+        running_loss = 0.0
+        for i, data in enumerate(train_loader, 0):
+            # get the inputs
+            inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
-                # zero the parameter gradients
-                optimizer.zero_grad()
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-                # forward + backward + optimize
-                outputs = net(inputs)
-                # outputs = torch.round(outputs)
-                loss = criterion(outputs, labels)
-                ######################################################
-                scheduler.step(loss)
-                loss.backward()
-                optimizer.step()
+            # forward + backward + optimize
+            outputs = net(inputs)
+            # outputs = torch.round(outputs)
+            loss = criterion(outputs, labels)
+            ######################################################
+            scheduler.step(loss)
+            loss.backward()
+            optimizer.step()
 
-                # print statistics
-                running_loss += loss.item()
-                if i % 10 == 9:  # print every 2000 mini-batches
-                    print('[%d, %5d] loss: %.3f' %
-                          (epoch + 1, i + 1, running_loss / 100))
-                    # with open('record', 'a') as f:
-                    #     f.write('[%d, %5d] loss: %.3f\n\n' %
-                    #         (epoch + 1, i + 1, running_loss / 2000))
-                    # if last_loss <= running_loss:
-                    #     loss_state_cnt += 1
-                    #     if loss_state_cnt >= 10:
-                    #         optimizer.param_groups[0]['lr'] *= 0.1
-                    #         loss_state_cnt = 0
-                    # last_loss = running_loss
-                    running_loss = 0.0
-
+            # print statistics
+            running_loss += loss.item()
+            if i % 10 == 9:  # print every 2000 mini-batches
+                print('[%d, %5d] loss: %.3f' %
+                      (epoch + 1, i + 1, running_loss / 100))
+                # with open('record', 'a') as f:
+                #     f.write('[%d, %5d] loss: %.3f\n\n' %
+                #         (epoch + 1, i + 1, running_loss / 2000))
+                # if last_loss <= running_loss:
+                #     loss_state_cnt += 1
+                #     if loss_state_cnt >= 10:
+                #         optimizer.param_groups[0]['lr'] *= 0.1
+                #         loss_state_cnt = 0
+                # last_loss = running_loss
+                running_loss = 0.0
     print('Finished Training')
     torch.save(net.state_dict(), '2 0+coon-sof.pt')
 
