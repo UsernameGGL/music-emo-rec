@@ -317,6 +317,8 @@ def test():
     cnt = 0
     my_total = 0
     correct_v3 = 0
+    correct_v4 = 0
+    total_v4 = 0
     with torch.no_grad():
         while test_data_is_left:
             if not test_data_has_refreshed:
@@ -339,11 +341,15 @@ def test():
 
                 cnt += 1
 
-                if(cnt % 100 == 99):
-                    print(1, outputs)
+                for k in range(batch_size):
+                    _, index = torch.sort(outputs[k])
+                    emotion_num = torch.sum(labels[k])
+                    total_v4 += emotion_num
+                    for kk in range(emotion_num):
+                        if labels[k][index[kk]] == 1:
+                            correct_v4 += 1
+
                 outputs = torch.round(outputs)
-                if(cnt % 100 == 99):
-                    print(2, outputs)
                 # labels = labels.float()
                 total += labels.size(0)
                 #########################################################
@@ -372,6 +378,8 @@ def test():
             100 * correct_v2 / total))
     print('My_Accuracy_2 of the network on the test images: %d %%' % (
             100 * correct_v3 / my_total))
+    print('My_Accuracy_4 of the network on the test images: %d %%' % (
+            100 * correct_v4 / total_v4))
 
 
 if __name__ == "__main__":

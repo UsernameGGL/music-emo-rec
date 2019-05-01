@@ -288,6 +288,8 @@ def test():
     sigmoid = nn.Sigmoid()
     my_total = 0
     correct_v3 = 0
+    correct_v4 = 0
+    total_v4 = 0
     with torch.no_grad():
         while test_data_is_left:
             if not test_data_has_refreshed:
@@ -309,9 +311,16 @@ def test():
                 # print(1, outputs)
                 # ####################################################here
                 # outputs = sigmoid(outputs)
-                print(2, outputs)
+                # print(2, outputs)
+                for k in range(batch_size):
+                    _, index = torch.sort(outputs[k])
+                    emotion_num = torch.sum(labels[k])
+                    total_v4 += emotion_num
+                    for kk in range(emotion_num):
+                        if labels[k][index[kk]] == 1:
+                            correct_v4 += 1
                 outputs = torch.round(outputs)
-                print(3, outputs)
+                # print(3, outputs)
                 #labels = labels.float()
                 total += labels.size(0)
                 print(total)
@@ -339,6 +348,8 @@ def test():
         100 * correct_v2 / total))
     print('My_Accuracy_2 of the network on the test images: %d %%' % (
             100 * correct_v3 / my_total))
+    print('My_Accuracy_4 of the network on the test images: %d %%' % (
+            100 * correct_v4 / total_v4))
 
 
 
