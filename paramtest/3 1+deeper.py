@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*18)
+# time.sleep(3600*18)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -23,7 +23,7 @@ batch_size = 100
 epoch_num = 1
 # input_num = 2
 interval = 2000            # 窗口间隔
-part_data_num = 100     # 每一次训读入的数据
+part_data_num = 1000     # 每一次训读入的数据
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device('cpu')
 
@@ -90,23 +90,28 @@ def transfer_data():
     global test_data_has_refreshed
     global slice_num
     global total_slice_num
-    path = 'E:/data/cal500/music-data-v2/'
-    sliceDir = os.listdir(path=path)
-    sample_len = pic_len*pic_len
-    for sliceFNama in sliceDir:
-        slice_file = open(path + sliceFNama, 'r')
-        slice_reader = csv.reader(slice_file)
-        slices = list(slice_reader)
+    # 读入音频数据，计算数据行数
+    input_file = open('../../data/cal500/prodAudios_v2.txt', 'r')
+    input_lines = input_file.readlines()
+    # create_inp_list = True
+    for line in input_lines:
         slice_num += 1
-        for one_slice in slices:
-            if not one_slice:
-                continue
-            one_slice = list(map(float, one_slice))
-            time_data = one_slice[0: sample_len]
-            freq_data = one_slice[sample_len: len(one_slice)-1]
-            freq_data[0] = one_slice[len(one_slice)-1]
+        line = line.split(' ')
+        line.pop()
+        line = list(map(int, line))
+        line_len = len(line)
+        # print(line_len)
+        # print(line_len)
+        sample_start = 0
+        sample_len = pic_len*pic_len
+        while sample_start + sample_len <= line_len:
+            time_data = line[sample_start: sample_start + sample_len]
+            freq_data = abs(np.fft.fft(time_data)/sample_len)
+            # freq_data[0] = statistics.mean(freq_data[1:])
+            # #######################################here
             time_data = np.array(time_data).reshape(pic_len, pic_len)
             freq_data = np.array(freq_data).reshape(pic_len, pic_len)
+            sample_start += interval
             if train_or_test == 'train':
                 train_data[true_data_len] = torch.Tensor([time_data, freq_data])
                 train_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
@@ -120,13 +125,13 @@ def transfer_data():
                 else:
                     test_data_has_refreshed = True
             while true_data_len == part_data_num:
-                time.sleep(0.5)
-        if train_data_is_left and slice_num >= train_slice_num:
+                time.sleep(1)
+        if slice_num >= train_slice_num:
             train_or_test = 'test'
             train_data_is_left = False
         if slice_num >= total_slice_num:
             break
-        slice_file.close()
+    input_file.close()
     test_data_is_left = False
 
 
@@ -178,7 +183,7 @@ class Net(nn.Module):
         x = self.norm1(x)
         for i in range(10):
             x = F.relu(self.conv5(x))
-            x = self.norm2(x)
+            x = self.norm1(x)
         x = self.pool(F.relu(self.conv2(x)))
         x = self.norm2(x)
         x = (F.relu(self.conv3(x)))

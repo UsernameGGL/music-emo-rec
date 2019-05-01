@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*20)
+# time.sleep(3600*20)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -178,7 +178,7 @@ class Net(nn.Module):
         x = self.norm1(x)
         for i in range(10):
             x = F.relu(self.conv5(x))
-            x = self.norm2(x)
+            x = self.norm1(x)
         x = self.pool(F.relu(self.conv2(x)))
         x = self.norm2(x)
         x = (F.relu(self.conv3(x)))
@@ -315,9 +315,11 @@ def test():
                 # ####################################################here
                 # outputs = sigmoid(outputs)
                 # print(2, outputs)
+                print(labels.size())
                 for k in range(batch_size):
                     _, index = torch.sort(outputs[k], descending=True)
                     emotion_num = int(torch.sum(labels[k]).item())
+                    print(epoch_num)
                     total_v4 += emotion_num
                     for kk in range(emotion_num):
                         if labels[k][index[kk]] == 1:

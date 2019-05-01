@@ -346,10 +346,10 @@ def test():
 
                 cnt += 1
 
-                # print(labels.size())
+                print(labels.size())
                 for k in range(batch_size):
                     _, index = torch.sort(outputs[k], descending=True)
-                    # print(index)
+                    print(index)
                     emotion_num = int(torch.sum(labels[k]).item())
                     total_v4 += emotion_num
                     for kk in range(emotion_num):
