@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-# time.sleep(3600*24)
+time.sleep(3600*8)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -342,8 +342,8 @@ def test():
                 cnt += 1
 
                 for k in range(batch_size):
-                    _, index = torch.sort(outputs[k])
-                    emotion_num = torch.sum(labels[k])
+                    _, index = torch.sort(outputs[k], descending=True)
+                    emotion_num = int(torch.sum(labels[k]).item())
                     total_v4 += emotion_num
                     for kk in range(emotion_num):
                         if labels[k][index[kk]] == 1:

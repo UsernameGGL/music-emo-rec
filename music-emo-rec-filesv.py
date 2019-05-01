@@ -13,7 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 # train_rate = 0.8
-train_slice_num = 2222  # 用来训练的曲子数
+train_slice_num = 2223  # 用来训练的曲子数
 total_slice_num = train_slice_num + 1000
 pic_len = 256           # 图片长度
 batch_size = 100
@@ -269,6 +269,7 @@ def train():
 
 
     print('Finished Training')
+    torch.save(net.state_dict(), 'filesv.pt')
 
 
 def test():
@@ -314,7 +315,7 @@ def test():
                 # print(2, outputs)
                 for k in range(batch_size):
                     _, index = torch.sort(outputs[k])
-                    emotion_num = torch.sum(labels[k])
+                    emotion_num = int(torch.sum(labels[k]).item())
                     total_v4 += emotion_num
                     for kk in range(emotion_num):
                         if labels[k][index[kk]] == 1:
@@ -323,7 +324,7 @@ def test():
                 # print(3, outputs)
                 #labels = labels.float()
                 total += labels.size(0)
-                print(total)
+                # print(total)
                 ########################################
                 outputs[outputs < 0] = 0
                 outputs[outputs > 1] = 1
@@ -340,7 +341,7 @@ def test():
                     for kk in range(label_len):
                         if labels[k][kk] == 1 and outputs[k][kk] == 1:
                             correct_v3 += 1
-
+    my_total = total_v4
     print('Accuracy of the network on the test images: %d %%' % (
         100 * correct / total / 18))
     print('Loss of the network: {}'.format(loss))

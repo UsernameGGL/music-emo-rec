@@ -11,7 +11,7 @@ for k in range(batch_size):
 		if labels[k][index[kk]] == 1:
 			correct_v4 += 1
 print('My_Accuracy_4 of the network on the test images: %d %%' % (
-            100 * correct_v4 / total_v4))
+             100 * correct_v4 / total_v4))
 
 
 

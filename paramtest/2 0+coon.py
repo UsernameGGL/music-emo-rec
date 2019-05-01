@@ -301,7 +301,7 @@ def train():
                     running_loss = 0.0
 
     print('Finished Training')
-    torch.save(net.state_dict(), '0 0+coon.pt')
+    torch.save(net.state_dict(), '2 0+coon.pt')
 
 
 def test():
@@ -347,8 +347,8 @@ def test():
                 cnt += 1
 
                 for k in range(batch_size):
-                    _, index = torch.sort(outputs[k])
-                    emotion_num = torch.sum(labels[k])
+                    _, index = torch.sort(outputs[k], descending=True)
+                    emotion_num = int(torch.sum(labels[k]).item())
                     total_v4 += emotion_num
                     for kk in range(emotion_num):
                         if labels[k][index[kk]] == 1:
