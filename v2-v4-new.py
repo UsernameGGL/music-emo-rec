@@ -6,13 +6,13 @@ import statistics
 pic_len = 256
 sample_num = 100
 
-output_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/music-data-v4-back/'
+output_dir = 'E:/data/cal500/music-data-v4-back/'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 
 # 读入音频数据，计算数据行数
-input_file = open('D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/music-data-v4.csv', 'r')
+input_file = open('E:/data/cal500/music-data-v4.csv', 'r')
 reader = csv.reader(input_file)
 input_slice = list(reader)
 create_inp_list = True
