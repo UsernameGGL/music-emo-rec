@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-# time.sleep(3600*12)
+time.sleep(3600*18)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -20,6 +20,7 @@ total_slice_num = train_slice_num + 1000
 pic_len = 256  # 图片长度
 batch_size = 100
 epoch_num = 3
+epoch = 0
 # input_num = 2
 interval = 2000  # 窗口间隔
 part_data_num = 1000  # 每一次训读入的数据
@@ -87,43 +88,58 @@ def transfer_data():
     global test_data_has_refreshed
     global slice_num
     global total_slice_num
+    global epoch_num
+    global epoch
     path = 'E:/data/cal500/music-data-v2/'
     sliceDir = os.listdir(path=path)
     sample_len = pic_len*pic_len
-    for sliceFNama in sliceDir:
-        slice_file = open(path + sliceFNama, 'r')
-        slice_reader = csv.reader(slice_file)
-        slices = list(slice_reader)
-        slice_num += 1
-        for one_slice in slices:
-            if not one_slice:
-                continue
-            one_slice = list(map(float, one_slice))
-            time_data = one_slice[0: sample_len]
-            freq_data = one_slice[sample_len: len(one_slice)-1]
-            time_data = np.array(time_data).reshape(pic_len, pic_len)
-            freq_data = np.array(freq_data).reshape(pic_len, pic_len)
-            freq_data[0] = one_slice[len(one_slice) - 1]
-            if train_or_test == 'train':
-                train_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                train_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
-            else:
-                test_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                test_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
-            true_data_len += 1
-            if true_data_len == part_data_num:
+    for ii in range(epoch_num):
+        epoch += 1
+        for sliceFNama in sliceDir:
+            slice_file = open(path + sliceFNama, 'r')
+            slice_reader = csv.reader(slice_file)
+            slices = list(slice_reader)
+            slice_num += 1
+            for one_slice in slices:
+                if not one_slice:
+                    continue
+                one_slice = list(map(float, one_slice))
+                time_data = one_slice[0: sample_len]
+                freq_data = one_slice[sample_len: len(one_slice) - 1]
+                freq_data[0] = one_slice[len(one_slice) - 1]
+                # time_data = np.array(time_data).reshape(pic_len, pic_len)
+                # freq_data = np.array(freq_data).reshape(pic_len, pic_len)
+                time_data = np.array(time_data)
+                time_data = (time_data - np.mean(time_data)) / np.std(time_data)
+                freq_data = np.array(freq_data)
+                freq_data = (freq_data - np.mean(freq_data)) / np.std(freq_data)
+                time_data = time_data.reshape(pic_len, pic_len)
+                freq_data = freq_data.reshape(pic_len, pic_len)
                 if train_or_test == 'train':
-                    train_data_has_refreshed = True
+                    train_data[true_data_len] = torch.Tensor([time_data, freq_data])
+                    train_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
                 else:
-                    test_data_has_refreshed = True
-            while true_data_len == part_data_num:
-                time.sleep(0.5)
-        if train_data_is_left and slice_num >= train_slice_num:
-            train_or_test = 'test'
-            train_data_is_left = False
-        if slice_num >= total_slice_num:
-            break
-        slice_file.close()
+                    test_data[true_data_len] = torch.Tensor([time_data, freq_data])
+                    test_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
+                true_data_len += 1
+                if true_data_len == part_data_num:
+                    if train_or_test == 'train':
+                        train_data_has_refreshed = True
+                    else:
+                        test_data_has_refreshed = True
+                while true_data_len == part_data_num:
+                    time.sleep(0.5)
+            if train_data_is_left and slice_num >= train_slice_num:
+                if not ii == epoch_num - 1:
+                    slice_num = 0
+                    slice_file.close()
+                    break
+                train_or_test = 'test'
+                train_data_is_left = False
+            if slice_num >= total_slice_num:
+                slice_file.close()
+                break
+            slice_file.close()
     test_data_is_left = False
 
 
@@ -148,25 +164,31 @@ class TimeFreqDataset(Dataset):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.conv1 = nn.Conv2d(1, 6, 3)
+        self.conv5 = nn.Conv2d(6, 6, 3)
         self.norm1 = nn.BatchNorm2d(6)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 6, 5)
         self.norm2 = nn.BatchNorm2d(16)
         self.conv3 = nn.Conv2d(6, 6, 7)
         self.conv4 = nn.Conv2d(6, 6, 5)
-        linear_len = int(((((pic_len - 4) / 2 - 4) / 2 - 6) / 2 - 4) / 2)
+        linear_len = int(((((pic_len - 2) / 2 - 2*5 - 4) / 2 - 6) / 2 - 4) / 2)
         self.linear_len = linear_len
         self.fc1 = nn.Linear(6 * linear_len * linear_len, 500)
+        self.norm3 = nn.BatchNorm1d(num_features=500)
         self.fc2 = nn.Linear(500, 100)
+        self.norm4 = nn.BatchNorm1d(num_features=100)
         self.fc3 = nn.Linear(100, 20)
+        self.norm5 = nn.BatchNorm1d(num_features=20)
         self.fc4 = nn.Linear(20, 18)
+        self.norm6 = nn.BatchNorm1d(num_features=18)
 
-        self.conv1_2 = nn.Conv2d(1, 6, 5)
+        self.conv1_2 = nn.Conv2d(1, 6, 3)
+        self.conv5_2 = nn.Conv2d(6, 6, 3)
         self.conv2_2 = nn.Conv2d(6, 6, 5)
         self.conv3_2 = nn.Conv2d(6, 6, 7)
         self.conv4_2 = nn.Conv2d(6, 6, 5)
-        linear_len_2 = int(((((pic_len - 4) / 2 - 4) / 2 - 6) / 2 - 4) / 2)
+        linear_len_2 = int(((((pic_len - 2) / 2 - 2*5 - 4) / 2 - 6) / 2 - 4) / 2)
         self.linear_len_2 = linear_len_2
         self.fc1_2 = nn.Linear(6 * linear_len_2 * linear_len_2, 500)
         self.fc2_2 = nn.Linear(500, 100)
@@ -188,24 +210,28 @@ class Net(nn.Module):
         first = torch.unsqueeze(x[:, 0], 1)
         second = torch.unsqueeze(x[:, 1], 1)
         # third = x[:, 2]
-        first = self.pool(F.relu(self.conv1(first)))
-        first = self.pool(F.relu(self.conv2(first)))
-        first = self.pool(F.relu(self.conv3(first)))
-        first = self.pool(F.relu(self.conv4(first)))
+        first = self.norm1(self.pool(F.relu(self.conv1(first))))
+        for i in range(5):
+            first = self.norm1(F.relu(self.conv5(first)))
+        first = self.norm1(self.pool(F.relu(self.conv2(first))))
+        first = self.norm1(self.pool(F.relu(self.conv3(first))))
+        first = self.norm1(self.pool(F.relu(self.conv4(first))))
         first = first.view(-1, 6 * self.linear_len * self.linear_len)
-        first = F.relu(self.fc1(first))
-        first = F.relu(self.fc2(first))
-        first = F.relu(self.fc3(first))
+        first = self.norm3(F.relu(self.fc1(first)))
+        first = self.norm4(F.relu(self.fc2(first)))
+        first = self.norm5(F.relu(self.fc3(first)))
         first = (self.fc4(first))
 
-        second = self.pool(F.relu(self.conv1_2(second)))
-        second = self.pool(F.relu(self.conv2_2(second)))
-        second = self.pool(F.relu(self.conv3_2(second)))
-        second = self.pool(F.relu(self.conv4_2(second)))
+        second = self.norm1(self.pool(F.relu(self.conv1_2(second))))
+        for i in range(5):
+            second = self.norm1(F.relu(self.conv5_2(second)))
+        second = self.norm1(self.pool(F.relu(self.conv2_2(second))))
+        second = self.norm1(self.pool(F.relu(self.conv3_2(second))))
+        second = self.norm1(self.pool(F.relu(self.conv4_2(second))))
         second = second.view(-1, 6 * self.linear_len * self.linear_len)
-        second = F.relu(self.fc1_2(second))
-        second = F.relu(self.fc2_2(second))
-        second = F.relu(self.fc3_2(second))
+        second = self.norm3(F.relu(self.fc1_2(second)))
+        second = self.norm4(F.relu(self.fc2_2(second)))
+        second = self.norm5(F.relu(self.fc3_2(second)))
         second = (self.fc4_2(second))
 
         # third = self.pool(F.relu(self.conv1_3(third)))
@@ -245,58 +271,60 @@ def train():
     global true_data_len
     global part_data_num
     global device
+    global epoch
+    global epoch_num
     # last_loss = 0
     # loss_state_cnt = 0
-    for epoch in range(epoch_num):  # loop over the dataset multiple times
-        while train_data_is_left:
-            if not train_data_has_refreshed:
-                time.sleep(0.5)
-                continue
-            if true_data_len < part_data_num:
-                batch_size = 1
-            train_data_has_refreshed = False
-            true_data_len = 0
-            tmp_train_data = train_data.clone()
-            tmp_train_label = train_label.clone()
-            train_loader = DataLoader(dataset=TimeFreqDataset(tmp_train_data, tmp_train_label),
-                                      batch_size=batch_size, shuffle=True)
-            running_loss = 0.0
-            for i, data in enumerate(train_loader, 0):
-                # get the inputs
-                inputs, labels = data
-                inputs = inputs.to(device)
-                labels = labels.to(device)
+    # for epoch in range(epoch_num):  # loop over the dataset multiple times
+    while train_data_is_left:
+        if not train_data_has_refreshed:
+            time.sleep(0.5)
+            continue
+        if true_data_len < part_data_num:
+            batch_size = 1
+        train_data_has_refreshed = False
+        true_data_len = 0
+        tmp_train_data = train_data.clone()
+        tmp_train_label = train_label.clone()
+        train_loader = DataLoader(dataset=TimeFreqDataset(tmp_train_data, tmp_train_label),
+                                  batch_size=batch_size, shuffle=True)
+        running_loss = 0.0
+        for i, data in enumerate(train_loader, 0):
+            # get the inputs
+            inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
-                # zero the parameter gradients
-                optimizer.zero_grad()
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-                # forward + backward + optimize
-                outputs = net(inputs)
-                # outputs = torch.round(outputs)
-                loss = criterion(outputs, labels)
-                ######################################################
-                scheduler.step(loss)
-                loss.backward()
-                optimizer.step()
+            # forward + backward + optimize
+            outputs = net(inputs)
+            # outputs = torch.round(outputs)
+            loss = criterion(outputs, labels)
+            ######################################################
+            scheduler.step(loss)
+            loss.backward()
+            optimizer.step()
 
-                # print statistics
-                running_loss += loss.item()
-                if i % 10 == 9:  # print every 2000 mini-batches
-                    print('[%d, %5d] loss: %.3f' %
-                          (epoch + 1, i + 1, running_loss / 100))
-                    # with open('record', 'a') as f:
-                    #     f.write('[%d, %5d] loss: %.3f\n\n' %
-                    #         (epoch + 1, i + 1, running_loss / 2000))
-                    # if last_loss <= running_loss:
-                    #     loss_state_cnt += 1
-                    #     if loss_state_cnt >= 10:
-                    #         optimizer.param_groups[0]['lr'] *= 0.1
-                    #         loss_state_cnt = 0
-                    # last_loss = running_loss
-                    running_loss = 0.0
+            # print statistics
+            running_loss += loss.item()
+            if i % 10 == 9:  # print every 2000 mini-batches
+                print('[%d, %5d] loss: %.3f' %
+                      (epoch + 1, i + 1, running_loss / 100))
+                # with open('record', 'a') as f:
+                #     f.write('[%d, %5d] loss: %.3f\n\n' %
+                #         (epoch + 1, i + 1, running_loss / 2000))
+                # if last_loss <= running_loss:
+                #     loss_state_cnt += 1
+                #     if loss_state_cnt >= 10:
+                #         optimizer.param_groups[0]['lr'] *= 0.1
+                #         loss_state_cnt = 0
+                # last_loss = running_loss
+                running_loss = 0.0
 
     print('Finished Training')
-    torch.save(net.state_dict(), '2 0+coon-meanfreq.pt')
+    torch.save(net.state_dict(), '6-5+expnorm-epo.pt')
 
 
 def test():
@@ -341,10 +369,8 @@ def test():
 
                 cnt += 1
 
-                # print(labels.size())
                 for k in range(batch_size):
                     _, index = torch.sort(outputs[k], descending=True)
-                    # print(index)
                     emotion_num = int(torch.sum(labels[k]).item())
                     total_v4 += emotion_num
                     for kk in range(emotion_num):

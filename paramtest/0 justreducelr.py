@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # from torchvision import transforms
 # from torchvision.utils import save_image
 
-time.sleep(3600*4)
+time.sleep(3600*16)
 
 # train_rate = 0.8
 train_slice_num = 2223  # 用来训练的曲子数
@@ -136,6 +136,7 @@ class TimeFreqDataset(Dataset):
     def __init__(self, data, label):
         self.len = len(data)
         self.data = data
+        self.data.requires_grad = True
         self.label = label
 
     def __getitem__(self, index):

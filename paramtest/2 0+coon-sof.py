@@ -19,7 +19,8 @@ train_slice_num = 2223  # 用来训练的曲子数
 total_slice_num = train_slice_num + 1000
 pic_len = 256  # 图片长度
 batch_size = 100
-epoch_num = 1
+epoch_num = 3
+epoch = 0
 # input_num = 2
 interval = 2000  # 窗口间隔
 part_data_num = 1000  # 每一次训读入的数据
@@ -43,11 +44,11 @@ for line in reader_list:
     if line == []:
         continue
     if create_labels:
-        labels = [list(map(int, line))]
+        input_label = [list(map(int, line))]
         create_labels = False
     else:
-        labels.append(list(map(int, line)))
-label_len = len(labels[0])
+        input_label.append(list(map(int, line)))
+label_len = len(input_label[0])
 label_file.close()
 # labels = list(map(int, label_reader))[0:20]
 # print(labels[input_num-1])
@@ -87,10 +88,13 @@ def transfer_data():
     global test_data_has_refreshed
     global slice_num
     global total_slice_num
+    global epoch_num
+    global epoch
     path = 'E:/data/cal500/music-data-v2/'
     sliceDir = os.listdir(path=path)
     sample_len = pic_len*pic_len
     for ii in range(epoch_num):
+        epoch += 1
         for sliceFNama in sliceDir:
             slice_file = open(path + sliceFNama, 'r')
             slice_reader = csv.reader(slice_file)
@@ -102,15 +106,15 @@ def transfer_data():
                 one_slice = list(map(float, one_slice))
                 time_data = one_slice[0: sample_len]
                 freq_data = one_slice[sample_len: len(one_slice) - 1]
+                freq_data[0] = one_slice[len(one_slice) - 1]
                 time_data = np.array(time_data).reshape(pic_len, pic_len)
                 freq_data = np.array(freq_data).reshape(pic_len, pic_len)
-                freq_data[0] = statistics.mean(freq_data[1:])
                 if train_or_test == 'train':
                     train_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                    train_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
+                    train_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
                 else:
                     test_data[true_data_len] = torch.Tensor([time_data, freq_data])
-                    test_label[true_data_len] = torch.Tensor(labels[slice_num - 1])
+                    test_label[true_data_len] = torch.Tensor(input_label[slice_num - 1])
                 true_data_len += 1
                 if true_data_len == part_data_num:
                     if train_or_test == 'train':
@@ -121,10 +125,13 @@ def transfer_data():
                     time.sleep(0.5)
             if train_data_is_left and slice_num >= train_slice_num:
                 if not ii == epoch_num - 1:
-                    continue
+                    slice_num = 0
+                    slice_file.close()
+                    break
                 train_or_test = 'test'
                 train_data_is_left = False
             if slice_num >= total_slice_num:
+                slice_file.close()
                 break
             slice_file.close()
     test_data_is_left = False
@@ -239,6 +246,7 @@ scheduler = ReduceLROnPlateau(optimizer, 'min')
 
 def train():
     global epoch_num
+    global epoch
     global optimizer
     global net
     global criterion

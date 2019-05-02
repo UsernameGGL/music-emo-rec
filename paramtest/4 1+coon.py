@@ -300,7 +300,7 @@ def train():
                     running_loss = 0.0
 
     print('Finished Training')
-    torch.save(net.state_dict(), '2 0+coon.pt')
+    torch.save(net.state_dict(), '4-1+coon.pt')
 
 
 def test():
