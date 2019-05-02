@@ -55,7 +55,7 @@ for i in range(length):
         time_data = line[sample_start: sample_start + sample_len]
         freq_data = abs(np.fft.fft(time_data) / sample_len)
         # for j in range(len(freq_data)):
-        #     freq_data[i] = round(freq_data[j], 4)
+        #     freq_data[j] = round(freq_data[j], 4)
         end_data = statistics.mean(freq_data[1:])
         sample_start += interval
         # #########################

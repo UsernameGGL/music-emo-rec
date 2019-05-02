@@ -5,7 +5,7 @@ import wave
 
 
 
-song = AudioSegment.from_wav("./prodAudios/00001.wav")
+song = AudioSegment.from_wav("../prodAudios/00001.wav")
 print("len",len(song))
 print("frame_rate",song.frame_rate)
 print("frame_width",song.frame_width)
@@ -21,6 +21,8 @@ print(len(song))
 print(len(song.raw_data))
 
 raw_data = [song.raw_data[i] for i in range(len(song.raw_data))]
+raw_data_2 = list(song.raw_data)
+print(raw_data == raw_data_2)
 audio_out_data = np.array([raw_data[0: 10]])
 print(audio_out_data)
 audio_out_data = np.append(audio_out_data, [raw_data[10: 20]], axis=0)
