@@ -44,7 +44,7 @@ for audioFName in audioDir:
 		sample_start = 0
 		sample_len = pic_len * pic_len
 		line_len = len(raw_data)
-		interval = int((line_len - sample_len) / sample_num)
+		interval = int((line_len - sample_len) / (sample_num - 1))
 		file_name = '0'
 		tmp_i = exportNum
 		while tmp_i < 10000:

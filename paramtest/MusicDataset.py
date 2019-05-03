@@ -6,7 +6,7 @@ import statistics
 import numpy as np
 sample_num = 100
 
-
+# 用于训练和测试数据都在一个文件夹内
 class MusicDataOne(Dataset):
     def __init__(self, data_dir, label_file, transform=None, pic_len=256, start=0, total=3223):
         self.start = start
@@ -35,6 +35,7 @@ class MusicDataOne(Dataset):
         return (self.total - self.start) * sample_num
 
     def __getitem__(self, idx):
+        idx = int((idx / sample_num + self.start) * sample_num)
         file = open(self.file_names[int(idx / sample_num)])
         rows = list(csv.reader(file))
         row = list(map(float, rows[idx % sample_num]))
@@ -51,7 +52,8 @@ class MusicDataOne(Dataset):
         return data, label
 
 
-class MusicDataTwo(object):
+# 用于训练和测试数据在不同的文件夹内
+class MusicDataTwo(Dataset):
     """docstring for MusicDataTwo"""
 
     def __init__(self, data_dir, label_file, transform=None, pic_len=256):
@@ -99,7 +101,18 @@ class MusicDataTwo(object):
         return data, label
 
 
-class MusicDataThree(object):
+def get_data(time_data, pic_len):
+    sample_len = pic_len * pic_len
+    freq_data = abs(np.fft.fft(time_data) / sample_len)
+    freq_data[0] = statistics.mean(freq_data[1:])
+    time_data = np.array(time_data).reshape(pic_len, pic_len)
+    freq_data = np.array(freq_data).reshape(pic_len, pic_len)
+    data = torch.Tensor([time_data, freq_data])
+    return data
+
+
+# 用于训练和测试数据在同一个文件内
+class MusicDataThree(Dataset):
     def __init__(self, data_file, label_file, transform=None, pic_len=256, start=0, total=3223):
         super(MusicDataThree, self).__init__()
 
@@ -115,8 +128,6 @@ class MusicDataThree(object):
                 create_labels = False
             else:
                 self.labels.append(list(map(int, list(map(float, line)))))
-        self.label_len = len(self.labels[0])
-        self.len = len(self.labels)
         label_file.close()
 
         data_file = open(data_file, 'r')
@@ -126,22 +137,17 @@ class MusicDataThree(object):
         self.sample_len = pic_len * pic_len
         self.pic_len = pic_len
         self.transform = transform
+        self.start = start
 
     def __len__(self):
         return self.len * sample_num
 
     def __getitem__(self, idx):
+        idx = int((idx / sample_num + self.start) * sample_num)
         row = self.rows[int(idx/sample_num)]
         interval = int((len(row) - self.sample_len) / (sample_num - 1))
-        start = idx%sample_num*interval
-        time_data = row[start: start+self.sample_len]
-        freq_data = abs(np.fft.fft(time_data) / self.sample_len)
-        # for kkk in range(len(freq_data)):
-        #     freq_data[kkk] = round(freq_data[kkk], 5)
-        freq_data[0] = statistics.mean(freq_data[1:])
-        time_data = np.array(time_data).reshape(self.pic_len, self.pic_len)
-        freq_data = np.array(freq_data).reshape(self.pic_len, self.pic_len)
-        data = torch.Tensor([time_data, freq_data])
+        start = idx % sample_num * interval
+        data = get_data(row[start: start+self.sample_len])
         if self.transform:
             data = self.transform(data)
         label = self.labels[int(idx/sample_num)]
