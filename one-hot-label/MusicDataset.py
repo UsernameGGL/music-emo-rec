@@ -46,7 +46,6 @@ class MusicDataOne(Dataset):
         super(MusicDataOne, self).__init__()
 
         self.labels = get_label(label_file)
-        self.len = len(self.labels)
 
         data_file = open(data_file, 'r')
         reader = csv.reader(data_file)
