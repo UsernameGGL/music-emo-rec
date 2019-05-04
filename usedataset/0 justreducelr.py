@@ -4,10 +4,9 @@ from train_test import train, test
 
 
 print('start')
-
-
-if __name__ == "__main__":
-    net = train(model_path='0-justreducelr.pt')
-    test(net)
+net_name = '0-justreducelr'
+model_path = net_name + '.pt'
+net = train(model_path=model_path)
+test(net, net_name)
 
 

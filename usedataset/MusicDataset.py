@@ -6,9 +6,12 @@ import statistics
 import numpy as np
 
 sample_num = 100
-data_dir = 'E:/data/cal500/music-data-v4-back/'
-label_file = 'E:/data/cal500/labels_v4_back.csv'
-data_file = 'E:/data/cal500/music-data-v4.csv'
+total = 3219
+start = 0
+basic_dir = 'E:/data/cal500/'
+data_dir = basic_dir + 'music-data-v4-back/'
+label_file = basic_dir + 'labels_v4_back.csv'
+data_file = basic_dir + 'music-data-v4.csv'
 
 
 def one_hot_label(label_file):
@@ -16,7 +19,7 @@ def one_hot_label(label_file):
     label_reader = csv.reader(label_file)
     reader_list = list(label_reader)
     label_file.close()
-    return reader_list[0]
+    return torch.Tensor(reader_list[0])
 
 
 def get_label(label_file):
@@ -32,11 +35,12 @@ def get_label(label_file):
             create_labels = False
         else:
             labels.append(list(map(int, list(map(float, line)))))
-    return labels
+    return torch.Tensor(labels)
 
 
 def get_data(time_data, pic_len, transform):
     sample_len = pic_len * pic_len
+    time_data = list(map(float, time_data))
     freq_data = abs(np.fft.fft(time_data) / sample_len)
     freq_data[0] = statistics.mean(freq_data[1:])
     time_data = np.array(time_data).reshape(pic_len, pic_len)
@@ -52,8 +56,8 @@ def from_file(data_file, sample_idx, pic_len, transform):
 
     file = open(data_file)
     rows = list(csv.reader(file))
-    row = list(map(float, rows[sample_idx]))
-    time_data = row[0: sample_len]
+    row = rows[sample_idx]
+    time_data = list(map(float, row[0: sample_len]))
     freq_data = row[sample_len: sample_len * 2]
     freq_data[0] = row[sample_len * 2]
     time_data = torch.Tensor(time_data).view(1, pic_len, pic_len)
@@ -65,9 +69,9 @@ def from_file(data_file, sample_idx, pic_len, transform):
     return data
 
 
-# 用于训练和测试数据都在一个文件夹内
+# 用于训练和测试数据都在一个文件夹内, 注意total的作用其实是end，也仅是数据结尾下标
 class MusicDataOne(Dataset):
-    def __init__(self, data_dir=data_dir, label_file=label_file, transform=None, pic_len=256, start=0, total=3223):
+    def __init__(self, data_dir=data_dir, label_file=label_file, transform=None, pic_len=256, start=start, total=total):
         self.start = start
         self.total = total
 
@@ -121,10 +125,14 @@ class MusicDataTwo(Dataset):
 
 # 用于训练和测试数据在同一个文件内
 class MusicDataThree(Dataset):
-    def __init__(self, data_file=data_file, label_file=label_file, transform=None, pic_len=256, start=0, total=3223):
+    def __init__(self, data_file=data_file, label_file=label_file,
+     transform=None, pic_len=256, start=start, total=total, mode='normal'):
         super(MusicDataThree, self).__init__()
 
-        self.labels = get_label(label_file)
+        if mode == 'one-hot':
+            self.labels = one_hot_label(label_file)
+        else:
+            self.labels = get_label(label_file)
 
         data_file = open(data_file, 'r')
         reader = csv.reader(data_file)
@@ -175,6 +183,4 @@ class IniNorm(object):
         freq_data = np.array(data[1])
         time_data = (time_data - np.min(time_data)) / (np.max(time_data) - np.min(time_data))
         freq_data = (freq_data - np.min(freq_data)) / (np.max(freq_data) - np.min(freq_data))
-
-g
         

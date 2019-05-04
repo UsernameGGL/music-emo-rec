@@ -1,19 +1,29 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+# import sys
 from torch.utils.data import DataLoader
 from MusicDataset import MusicDataThree
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-train_num = 2578  # 用来训练的曲子数
+train_start = 0
+train_end = 2578  # 用来训练的曲子数
+test_start = 2578
+test_end = 3219
 batch_size = 100
 pic_len = 256
 label_len = 18
 epoch_num = 3
-data_dir = 'E:/data/cal500/music-data-v4-back/'
-label_file = 'E:/data/cal500/labels_v4_back.csv'
-data_file = 'E:/data/cal500/music-data-v4.csv'
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+basic_dir = 'E:/data/cal500/'
+data_dir = basic_dir + 'music-data-v4-back/'
+label_file = basic_dir + 'labels_v4_back.csv'
+data_file = basic_dir + 'music-data-v4.csv'
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device('cpu')
+basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
+data_file = basic_dir + 'music-data-v4.csv'
+label_file = basic_dir + 'labels_v4_back.csv'
+record_file = 'record.txt'
 
 
 class Justreducelr_0(nn.Module):
@@ -52,12 +62,26 @@ net = Justreducelr_0()
 
 # criterion = nn.CrossEntropyLoss()
 # criterion = nn.BCELoss()  # ##################################################### here
-train_set = MusicDataThree(data_file, label_file, total=train_num)
-test_set = MusicDataThree(data_file, label_file, start=train_num)
+train_set = MusicDataThree(data_file, label_file,start=train_start, total=train_end)
+test_set = MusicDataThree(data_file, label_file, start=test_start, total=test_end)
 criterion = nn.BCEWithLogitsLoss()
 
 
+def trans_mode(mode='normal'):
+    global criterion
+    global train_set
+    global test_set
+    if mode == 'one-hot':
+        label_file = basic_dir + 'one-hot-label.csv'
+        train_set = MusicDataThree(data_file, label_file,start=train_start, total=train_end)
+        test_set = MusicDataThree(data_file, label_file, start=test_start, total=test_end)
+        criterion = nn.CrossEntropyLoss()
+
+
 def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, optimizer=None, scheduler=None):
+    with open(record_file, 'a') as f:
+        f.write('This is model of' + model_path + '\n')
+
     net.to(device)
     if not optimizer:
         optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.1)
@@ -90,14 +114,18 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
             if i % 10 == 9:  # print every 2000 mini-batches
                 print('[%d, %5d] loss: %.3f' %
                       (epoch + 1, i + 1, running_loss / 10))
+                with open(record_file, 'a') as f:
+                    f.write('[%d, %5d] loss: %.3f\n' %
+                    (epoch + 1, i + 1, running_loss / 10))
                 running_loss = 0.0
+                torch.save(net.state_dict(), model_path)
 
     print('Finished Training')
     torch.save(net.state_dict(), model_path)
     return net
 
 
-def test(net, dataset=test_set):
+def test(net, net_name, dataset=test_set):
     correct = 0
     correct_v2 = 0
     total = 0
@@ -150,6 +178,15 @@ def test(net, dataset=test_set):
     print('My_Accuracy_2 of the network on the test images: %f %%' % (
             100 * correct_v3 / my_total))
     print('My_Accuracy_4 of the network on the test images: %f %%' % (
+            100 * correct_v4 / total_v4))
+    with open(record_file, 'a') as f:
+        f.write('This is the result of' + net_name + '\n')
+        f.write('Accuracy of the network on the test images: %f %%\n' % (
+            100 * correct / total / 18))
+        f.write('Loss of the network: {}\n'.format(loss))
+        f.write('My_Accuracy of the network on the test images: %f %%\n' % (
+            100 * correct_v2 / total))
+        f.write('My_Accuracy_4 of the network on the test images: %f %%\n' % (
             100 * correct_v4 / total_v4))
 
 
