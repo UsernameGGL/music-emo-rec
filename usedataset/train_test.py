@@ -23,7 +23,7 @@ device = torch.device('cpu')
 basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 data_file = basic_dir + 'music-data-v4.csv'
 label_file = basic_dir + 'labels_v4_back.csv'
-record_file = 'record.txt'
+record_file = 'record-2.txt'
 
 
 class Justreducelr_0(nn.Module):
@@ -247,68 +247,32 @@ class Coon_0_2(nn.Module):
         self.conv4 = nn.Conv2d(6, 6, 5)
         linear_len = int(((((pic_len - 4) / 2 - 4) / 2 - 6) / 2 - 4) / 2)
         self.linear_len = linear_len
-        self.fc1 = nn.Linear(6 * linear_len * linear_len, 500)
-        self.fc2 = nn.Linear(500, 100)
-        self.fc3 = nn.Linear(100, 20)
-        self.fc4 = nn.Linear(20, 18)
-
-        self.conv1_2 = nn.Conv2d(1, 6, 5)
-        self.conv2_2 = nn.Conv2d(6, 6, 5)
-        self.conv3_2 = nn.Conv2d(6, 6, 7)
-        self.conv4_2 = nn.Conv2d(6, 6, 5)
-        linear_len_2 = int(((((pic_len - 4) / 2 - 4) / 2 - 6) / 2 - 4) / 2)
-        self.linear_len_2 = linear_len_2
-        self.fc1_2 = nn.Linear(6 * linear_len_2 * linear_len_2, 500)
-        self.fc2_2 = nn.Linear(500, 100)
-        self.fc3_2 = nn.Linear(100, 20)
-        self.fc4_2 = nn.Linear(20, 18)
-
-        # self.conv1_3 = nn.Conv2d(1, 6, 5)
-        # self.conv2_3 = nn.Conv2d(6, 6, 5)
-        # self.conv3_3 = nn.Conv2d(6, 6, 7)
-        # self.conv4_3 = nn.Conv2d(6, 6, 5)
-        # linear_len_3 = int(((((pic_len - 4) / 2 - 4) / 2 - 6) / 2 - 4) / 2)
-        # self.linear_len_3 = linear_len_3
-        # self.fc1_3 = nn.Linear(6 * linear_len_3 * linear_len_3, 500)
-        # self.fc2_3 = nn.Linear(500, 100)
-        # self.fc3_3 = nn.Linear(100, 20)
-        # self.fc4_3 = nn.Linear(20, 18)
+        self.conv5 = nn.Conv2d(6, 6, 3)
+        self.conv6 = nn.Conv2d(6, 12, 3)
+        self.conv7 = nn.Conv2d(12, 18, 1)
 
     def forward(self, x):
         first = torch.unsqueeze(x[:, 0], 1)
         second = torch.unsqueeze(x[:, 1], 1)
         # third = x[:, 2]
-        first = self.pool(F.relu(self.conv1(first)))
-        first = self.pool(F.relu(self.conv2(first)))
-        first = self.pool(F.relu(self.conv3(first)))
-        first = self.pool(F.relu(self.conv4(first)))
-        first = first.view(-1, 6 * self.linear_len * self.linear_len)
-        first = F.relu(self.fc1(first))
-        first = F.relu(self.fc2(first))
-        first = F.relu(self.fc3(first))
-        first = (self.fc4(first))
+        first = self.pool(self.conv1(first))
+        first = self.pool(self.conv2(first))
+        first = self.pool(self.conv3(first))
+        first = self.pool(self.conv4(first))
+        for i in range(3):
+            first = self.conv5(first)
+        first = self.conv6(first)
+        first = self.conv7(first)
 
-        second = self.pool(F.relu(self.conv1_2(second)))
-        second = self.pool(F.relu(self.conv2_2(second)))
-        second = self.pool(F.relu(self.conv3_2(second)))
-        second = self.pool(F.relu(self.conv4_2(second)))
-        second = second.view(-1, 6 * self.linear_len * self.linear_len)
-        second = F.relu(self.fc1_2(second))
-        second = F.relu(self.fc2_2(second))
-        second = F.relu(self.fc3_2(second))
-        second = (self.fc4_2(second))
-
-        # third = self.pool(F.relu(self.conv1_3(third)))
-        # third = self.pool(F.relu(self.conv2_3(third)))
-        # third = self.pool(F.relu(self.conv3_3(third)))
-        # third = self.pool(F.relu(self.conv4_3(third)))
-        # third = third.view(-1, 6 * self.linear_len * self.linear_len)
-        # third = F.relu(self.fc1_3(third))
-        # third = F.relu(self.fc2_3(third))
-        # third = F.relu(self.fc3_3(third))
-        # third = F.relu(self.fc4_3(third))
-        # return first + second + third
-        y = first + second
+        second = self.pool(self.conv1(second))
+        second = self.pool(self.conv2(second))
+        second = self.pool(self.conv3(second))
+        second = self.pool(self.conv4(second))
+        for i in range(3):
+            second = self.conv5(second)
+        second = self.conv6(second)
+        second = self.conv7(second)
+        y = (first + second).view(1, -1)
         return y
 
 
