@@ -8,10 +8,10 @@ import numpy as np
 sample_num = 100
 total = 3219
 start = 0
-basic_dir = 'E:/data/cal500/'
-data_dir = basic_dir + 'music-data-v4-back/'
-label_file = basic_dir + 'labels_v4_back.csv'
-data_file = basic_dir + 'music-data-v4.csv'
+basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
+data_dir = basic_dir + 'raw-data-v5/'
+label_file = basic_dir + 'labels-v5.csv'
+data_file = basic_dir + 'music-data-v5.csv'
 
 
 def one_hot_label(label_file):
@@ -40,7 +40,6 @@ def get_label(label_file):
 
 def get_data(time_data, pic_len, transform):
     sample_len = pic_len * pic_len
-    time_data = list(map(float, time_data))
     freq_data = abs(np.fft.fft(time_data) / sample_len)
     freq_data[0] = statistics.mean(freq_data[1:])
     time_data = np.array(time_data).reshape(pic_len, pic_len)
@@ -135,8 +134,7 @@ class MusicDataThree(Dataset):
             self.labels = get_label(label_file)
 
         data_file = open(data_file, 'r')
-        reader = csv.reader(data_file)
-        self.rows = list(reader)
+        self.rows = data_file.readlines()
         self.len = total - start
         self.sample_len = pic_len * pic_len
         self.pic_len = pic_len
@@ -150,10 +148,49 @@ class MusicDataThree(Dataset):
         idx = int((idx / sample_num + self.start) * sample_num)
         music_idx = int(idx / sample_num)
         sample_idx = idx % sample_num
-        row = self.rows[music_idx]
-        interval = int((len(row) - self.sample_len) / (sample_num - 1))
+        row = self.rows[music_idx].split(',')
+        length = len(row)
+        row[length - 1] = row[length - 1].split('\n')[0]
+        interval = int((length - self.sample_len) / (sample_num - 1))
         start = sample_idx * interval
-        data = get_data(row[start: start + self.sample_len], self.pic_len, self.transform)
+        row = list(map(int, row[start: start + self.sample_len]))
+        data = get_data(row, self.pic_len, self.transform)
+        label = self.labels[music_idx]
+        return data, label
+
+
+# 用于训练和测试数据在同一个文件夹内，但每一行未处理的raw_data都属于单独一个文件
+class MusicDataFour(Dataset):
+    def __init__(self, data_dir=data_dir, label_file=label_file,
+     transform=None, pic_len=256, start=start, total=total, mode='normal'):
+        super(MusicDataFour, self).__init__()
+
+        if mode == 'one-hot':
+            self.labels = one_hot_label(label_file)
+        else:
+            self.labels = get_label(label_file)
+
+        self.file_names = os.listdir(path=data_dir)
+        self.len = total - start
+        self.sample_len = pic_len * pic_len
+        self.pic_len = pic_len
+        self.transform = transform
+        self.start = start
+        self.data_dir = data_dir
+
+    def __len__(self):
+        return self.len * sample_num
+
+    def __getitem__(self, idx):
+        idx = int((idx / sample_num + self.start) * sample_num)
+        music_idx = int(idx / sample_num)
+        sample_idx = idx % sample_num
+        row = list(csv.reader(open(self.data_dir+self.file_names[music_idx], 'r')))[0]
+        length = len(row)
+        interval = int((length - self.sample_len) / (sample_num - 1))
+        start = sample_idx * interval
+        row = list(map(int, row[start: start + self.sample_len]))
+        data = get_data(row, self.pic_len, self.transform)
         label = self.labels[music_idx]
         return data, label
 

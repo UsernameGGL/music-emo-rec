@@ -21,9 +21,9 @@ data_file = basic_dir + 'music-data-v4.csv'
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
 basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
-data_file = basic_dir + 'music-data-v4.csv'
-label_file = basic_dir + 'labels_v4_back.csv'
-record_file = 'record-2.txt'
+data_file = basic_dir + 'music-data-v5.csv'
+label_file = basic_dir + 'labels-v5.csv'
+record_file = 'record-one-hot.txt'
 
 
 class Justreducelr_0(nn.Module):
@@ -62,9 +62,14 @@ net = Justreducelr_0()
 
 # criterion = nn.CrossEntropyLoss()
 # criterion = nn.BCELoss()  # ##################################################### here
-train_set = MusicDataThree(data_file, label_file,start=train_start, total=train_end)
+train_set = MusicDataThree(data_file, label_file, start=train_start, total=train_end)
 test_set = MusicDataThree(data_file, label_file, start=test_start, total=test_end)
 criterion = nn.BCEWithLogitsLoss()
+
+
+def set_record_file(file_name):
+    global record_file
+    record_file = file_name
 
 
 def trans_mode(mode='normal'):
@@ -86,7 +91,8 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
     if not optimizer:
         optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.1)
     if not scheduler:
-        scheduler = ReduceLROnPlateau(optimizer, 'min')
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=30, 
+            threshold=1e-6, factor=0.7, min_lr=1e-7)
     for epoch in range(epoch_num):  # loop over the dataset multiple times
         train_loader = DataLoader(dataset=dataset,
                                   batch_size=batch_size, shuffle=True)
@@ -125,7 +131,7 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
     return net
 
 
-def test(net, net_name, dataset=test_set):
+def test(net, net_name, dataset):
     correct = 0
     correct_v2 = 0
     total = 0
@@ -136,7 +142,7 @@ def test(net, net_name, dataset=test_set):
     correct_v4 = 0
     total_v4 = 0
     with torch.no_grad():
-        test_loader = DataLoader(dataset=test_set,
+        test_loader = DataLoader(dataset=dataset,
                                  batch_size=batch_size, shuffle=True)
         for data in test_loader:
             images, labels = data
@@ -169,6 +175,15 @@ def test(net, net_name, dataset=test_set):
                 for kk in range(label_len):
                     if labels[k][kk] == 1 and outputs[k][kk] == 1:
                         correct_v3 += 1
+            print('Accuracy of the network on the test images: %f %%' % (
+            100 * correct / total / 18))
+            print('Loss of the network: {}'.format(loss))
+            print('My_Accuracy of the network on the test images: %f %%' % (
+                    100 * correct_v2 / total))
+            print('My_Accuracy_2 of the network on the test images: %f %%' % (
+                    100 * correct_v3 / my_total))
+            print('My_Accuracy_4 of the network on the test images: %f %%' % (
+                    100 * correct_v4 / total_v4))
 
     print('Accuracy of the network on the test images: %f %%' % (
             100 * correct / total / 18))
@@ -249,7 +264,7 @@ class Coon_0_2(nn.Module):
         self.linear_len = linear_len
         self.conv5 = nn.Conv2d(6, 6, 3)
         self.conv6 = nn.Conv2d(6, 12, 3)
-        self.conv7 = nn.Conv2d(12, 18, 1)
+        self.conv7 = nn.Conv2d(12, 18, 3)
 
     def forward(self, x):
         first = torch.unsqueeze(x[:, 0], 1)
@@ -272,7 +287,7 @@ class Coon_0_2(nn.Module):
             second = self.conv5(second)
         second = self.conv6(second)
         second = self.conv7(second)
-        y = (first + second).view(1, -1)
+        y = (first + second).view(batch_size, -1)
         return y
 
 
