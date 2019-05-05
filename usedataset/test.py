@@ -1,10 +1,6 @@
-basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
-audio_path = basic_dir + 'music-data-v4.csv'
-audio_file = open(audio_path, 'r')
-lines = audio_file.readlines()
-audio_file.close()
-audio_file = open(audio_path, 'r')
-line = audio_file.readline()
-print(line == lines[0])
-line = audio_file.readline()
-print(line == lines[0])
+import csv
+import torch
+file = open('D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/one-hot-label.csv', 'r')
+labels = torch.Tensor(list(map(int, list(csv.reader(file))[0])))
+idx = torch.max(labels)
+print(idx)
