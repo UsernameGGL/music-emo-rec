@@ -34,8 +34,10 @@ class Coon_0_2(nn.Module):
         self.conv2 = nn.Conv2d(6, 6, 3)
         self.conv3 = nn.Conv2d(6, 12, 3)
         self.conv4 = nn.Conv2d(12, 6, 3)
-        self.conv5 = nn.Conv2d(6, 6, 5)
-        self.conv6 = nn.Conv2d(6, 1, 2)
+        # self.conv5 = nn.Conv2d(6, 6, 5)
+        # self.conv6 = nn.Conv2d(6, 1, 2)
+        self.fc = nn.Linear(1176, type_num)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         first = torch.unsqueeze(x[:, 0], 1)
@@ -45,28 +47,30 @@ class Coon_0_2(nn.Module):
         first = F.relu(self.pool(self.conv2(first)))
         first = F.relu(self.pool(self.conv3(first)))
         first = F.relu(self.pool(self.conv4(first)))
-        for i in range(3):
-            first = F.relu(self.conv5(first))
-        first = self.conv6(first)
+        # for i in range(3):
+        #     first = F.relu(self.conv5(first))
+        # first = self.conv6(first)
+        first = first.view(batch_size, -1)
 
         second = F.relu(self.pool(self.conv1(second)))
         second = F.relu(self.pool(self.conv2(second)))
         second = F.relu(self.pool(self.conv3(second)))
         second = F.relu(self.pool(self.conv4(second)))
-        for i in range(3):
-            second = F.relu(self.conv5(second))
-        second = self.conv6(second)
-        y = first + second
+        # for i in range(3):
+        #     second = F.relu(self.conv5(second))
+        # second = self.conv6(second)
+        second = second.view(batch_size, -1)
+        y = self.sigmoid(first + second)
         return y
 
 
 net = Coon_0_2()
 
-# criterion = nn.CrossEntropyLoss()
 # criterion = nn.BCELoss()  # ##################################################### here
 train_set = MusicDataThree(data_file, label_file, start=train_start, total=train_end, mode='one-hot')
 test_set = MusicDataThree(data_file, label_file, start=test_start, total=test_end, mode='one-hot')
-criterion = nn.MSELoss()
+# criterion = nn.MSELoss()
+criterion = nn.CrossEntropyLoss()
 
 
 def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, optimizer=None, scheduler=None):
@@ -129,16 +133,12 @@ def test(net, net_name, dataset):
             images = images.to(device)
             labels = labels.to(device)
             outputs = net(images)
-            # print(2, outputs)
+            total += batch_size
             for k in range(batch_size):
-                last_d = np.infty
-                e_type = 0
-                for kk in range(type_num):
-                    dif = (outputs[k] - kk) * (outputs[k] - kk)
-                    if dif < last_d:
-                        last_d = dif
-                        e_type = kk
-                correct += (e_type == labels[k]).item()
+                _, idx = torch.sort(outputs[k], descending=True)
+                if idx[0] == labels[k]:
+                    correct += 1
+                    pass
             tmp_loss = abs(outputs.data - labels).sum().item()
             loss += tmp_loss
             # print('Accuracy of the network on the test images: %f %%' % (
