@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 # import sys
+import torch.nn.functional as F
+import numpy as np
 from torch.utils.data import DataLoader
 from MusicDataset import MusicDataThree
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -12,6 +14,7 @@ batch_size = 100
 pic_len = 256
 label_len = 18
 epoch_num = 3
+type_num = 855
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
 basic_dir = '../'
@@ -30,26 +33,29 @@ class Coon_0_2(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 6, 3)
         self.conv3 = nn.Conv2d(6, 12, 3)
-        self.conv4 = nn.Conv2d(12, 18, 3)
-        self.fc = nn.Linear(3528, 855)
+        self.conv4 = nn.Conv2d(12, 6, 3)
+        self.conv5 = nn.Conv2d(6, 6, 5)
+        self.conv6 = nn.Conv2d(6, 1, 2)
 
     def forward(self, x):
         first = torch.unsqueeze(x[:, 0], 1)
         second = torch.unsqueeze(x[:, 1], 1)
         # third = x[:, 2]
-        first = self.pool(self.conv1(first))
-        first = self.pool(self.conv2(first))
-        first = self.pool(self.conv3(first))
-        first = self.pool(self.conv4(first))
-        first = first.view(batch_size, -1)
-        first = self.fc(first)
+        first = F.relu(self.pool(self.conv1(first)))
+        first = F.relu(self.pool(self.conv2(first)))
+        first = F.relu(self.pool(self.conv3(first)))
+        first = F.relu(self.pool(self.conv4(first)))
+        for i in range(3):
+            first = F.relu(self.conv5(first))
+        first = self.conv6(first)
 
-        second = self.pool(self.conv1(second))
-        second = self.pool(self.conv2(second))
-        second = self.pool(self.conv3(second))
-        second = self.pool(self.conv4(second))
-        second = second.view(batch_size, -1)
-        second = self.fc(second)
+        second = F.relu(self.pool(self.conv1(second)))
+        second = F.relu(self.pool(self.conv2(second)))
+        second = F.relu(self.pool(self.conv3(second)))
+        second = F.relu(self.pool(self.conv4(second)))
+        for i in range(3):
+            second = F.relu(self.conv5(second))
+        second = self.conv6(second)
         y = first + second
         return y
 
@@ -60,7 +66,7 @@ net = Coon_0_2()
 # criterion = nn.BCELoss()  # ##################################################### here
 train_set = MusicDataThree(data_file, label_file, start=train_start, total=train_end, mode='one-hot')
 test_set = MusicDataThree(data_file, label_file, start=test_start, total=test_end, mode='one-hot')
-criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 
 
 def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, optimizer=None, scheduler=None):
@@ -69,7 +75,7 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
 
     net.to(device)
     if not optimizer:
-        optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.1)
+        optimizer = torch.optim.SGD(net.parameters(), lr=10, momentum=0.1)
     if not scheduler:
         scheduler = ReduceLROnPlateau(optimizer, 'min', patience=30, 
             threshold=1e-6, factor=0.7, min_lr=1e-7)
@@ -125,10 +131,14 @@ def test(net, net_name, dataset):
             outputs = net(images)
             # print(2, outputs)
             for k in range(batch_size):
-                _, index = torch.sort(outputs[k], descending=True)
-                total += batch_size
-                if labels[k] == index[0]:
-                    correct += 1
+                last_d = np.infty
+                e_type = 0
+                for kk in range(type_num):
+                    dif = (outputs[k] - kk) * (outputs[k] - kk)
+                    if dif < last_d:
+                        last_d = dif
+                        e_type = kk
+                correct += (e_type == labels[k]).item()
             tmp_loss = abs(outputs.data - labels).sum().item()
             loss += tmp_loss
             # print('Accuracy of the network on the test images: %f %%' % (

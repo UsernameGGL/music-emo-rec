@@ -19,7 +19,7 @@ def one_hot_label(label_file):
     label_reader = csv.reader(label_file)
     reader_list = list(label_reader)
     label_file.close()
-    return torch.LongTensor(list(map(int, reader_list[0])))
+    return torch.Tensor(list(map(int, reader_list[0])))
 
 
 def get_label(label_file):
