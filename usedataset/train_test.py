@@ -1,19 +1,20 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 # import sys
 from torch.utils.data import DataLoader
 from MusicDataset import MusicDataThree
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 train_start = 0
-train_end = 2500  # 用来训练的曲子数
-test_start = 2500
-test_end = 3200
-batch_size = 100
+train_end = 128  # 用来训练的曲子数
+test_start = 0
+test_end = 128
+batch_size = 128
 pic_len = 256
 label_len = 18
-epoch_num = 100
+epoch_num = 10000
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
 basic_dir = 'E:/data/cal500/'
@@ -21,7 +22,7 @@ data_dir = basic_dir + 'music-data-v4-back/'
 label_file = basic_dir + 'labels_v4_back.csv'
 data_file = basic_dir + 'music-data-v4.csv'
 basic_dir = '../'
-basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
+# basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 data_file = basic_dir + 'music-data-v5.csv'
 label_file = basic_dir + 'labels-v5.csv'
 record_file = 'record-one-hot.txt'
@@ -57,6 +58,38 @@ class Justreducelr_0(nn.Module):
         x = self.norm4(self.fc1(x))
         x = self.norm5(self.fc2(x))
         x = (self.fc3(x))
+        x = self.fc4(x)
+        x = (self.fc5(x))
+        return x
+
+
+class Justreducelr_0_ini(nn.Module):
+    def __init__(self):
+        super(Justreducelr_0_ini, self).__init__()
+        self.conv1 = nn.Conv2d(2, 6, 5)
+        self.norm1 = nn.BatchNorm2d(6)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.norm2 = nn.BatchNorm2d(16)
+        self.conv3 = nn.Conv2d(16, 16, 7)
+        self.conv4 = nn.Conv2d(16, 8, 5)
+        linear_len = int(((pic_len - 4) / 2 - 4) / 2 - 6 - 4)
+        self.linear_len = linear_len
+        self.fc1 = nn.Linear(8 * linear_len * linear_len, 500)
+        self.fc2 = nn.Linear(500, 100)
+        self.fc3 = nn.Linear(100, 20)
+        self.fc4 = nn.Linear(20, 18)
+        self.fc5 = nn.Linear(18, 18)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = (F.relu(self.conv3(x)))
+        x = (F.relu(self.conv4(x)))
+        x = x.view(-1, 8 * self.linear_len * self.linear_len)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
         x = self.fc4(x)
         x = (self.fc5(x))
         return x
@@ -121,12 +154,12 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
 
             # print statistics
             running_loss += loss.item()
-            if i % 10 == 9:  # print every 2000 mini-batches
+            if epoch % 10 == 9:  # print every 2000 mini-batches
                 print('[%d, %5d] loss: %.3f' %
-                      (epoch + 1, i + 1, running_loss / 10))
+                      (epoch + 1, epoch + 1, running_loss / 10))
                 with open(record_file, 'a') as f:
                     f.write('[%d, %5d] loss: %.3f\n' %
-                    (epoch + 1, i + 1, running_loss / 10))
+                    (epoch + 1, epoch + 1, running_loss / 10))
                 running_loss = 0.0
                 torch.save(net.state_dict(), model_path)
 
@@ -145,6 +178,7 @@ def test(net, net_name, dataset=test_set):
     correct_v3 = 0
     correct_v4 = 0
     total_v4 = 0
+    threshold = 0
     with torch.no_grad():
         test_loader = DataLoader(dataset=dataset,
                                  batch_size=batch_size, shuffle=True)
@@ -155,7 +189,7 @@ def test(net, net_name, dataset=test_set):
             outputs = net(images)
             # print(1, outputs)
             # ####################################################here
-            # outputs = sigmoid(outputs)
+            outputs = sigmoid(outputs)
             # print(2, outputs)
             for k in range(batch_size):
                 _, index = torch.sort(outputs[k], descending=True)
@@ -164,11 +198,26 @@ def test(net, net_name, dataset=test_set):
                 for kk in range(emotion_num):
                     if labels[k][index[kk]] == 1:
                         correct_v4 += 1
-            outputs = torch.round(outputs)
+            print(torch.min(outputs))
+            print(torch.max(outputs))
+            one_correct = 0
+            for i in np.arange(0.3, 0.7, 0.01):
+                tmp_outputs = outputs.clone()
+                tmp_outputs[tmp_outputs > i] = 1
+                tmp_outputs[tmp_outputs <= i] = 0
+                tmp_correct = (tmp_outputs.data == labels).sum().item()
+                if tmp_correct > one_correct:
+                    one_correct = tmp_correct
+                    threshold = i
+                    r_outputs = tmp_outputs.clone()
+            print('--------threshold', threshold)
+            outputs = r_outputs
+            # outputs = torch.round(outputs)
             total += labels.size(0)
             ########################################
             my_total += labels[labels == 1].sum().item()
-            correct += (outputs.data == labels).sum().item()
+            correct += one_correct
+            # correct += (outputs.data == labels).sum().item()
             # loss += abs(outputs.data - labels).sum().item()
             tmp_loss = abs(outputs.data - labels).sum().item()
             if tmp_loss == 0:
