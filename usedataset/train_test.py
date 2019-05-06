@@ -7,19 +7,20 @@ from MusicDataset import MusicDataThree
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 train_start = 0
-train_end = 2578  # 用来训练的曲子数
-test_start = 2578
-test_end = 3219
+train_end = 2500  # 用来训练的曲子数
+test_start = 2500
+test_end = 3200
 batch_size = 100
 pic_len = 256
 label_len = 18
-epoch_num = 3
+epoch_num = 100
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
 basic_dir = 'E:/data/cal500/'
 data_dir = basic_dir + 'music-data-v4-back/'
 label_file = basic_dir + 'labels_v4_back.csv'
 data_file = basic_dir + 'music-data-v4.csv'
+basic_dir = '../'
 basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 data_file = basic_dir + 'music-data-v5.csv'
 label_file = basic_dir + 'labels-v5.csv'
@@ -30,29 +31,32 @@ class Justreducelr_0(nn.Module):
     def __init__(self):
         super(Justreducelr_0, self).__init__()
         self.conv1 = nn.Conv2d(2, 6, 5)
-        self.norm1 = nn.BatchNorm2d(6)
+        self.norm1 = nn.GroupNorm(3, 6)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
-        self.norm2 = nn.BatchNorm2d(16)
+        self.norm2 = nn.GroupNorm(4, 16)
         self.conv3 = nn.Conv2d(16, 16, 7)
         self.conv4 = nn.Conv2d(16, 8, 5)
+        self.norm3 = nn.GroupNorm(4, 8)
         linear_len = int(((pic_len - 4) / 2 - 4) / 2 - 6 - 4)
         self.linear_len = linear_len
         self.fc1 = nn.Linear(8 * linear_len * linear_len, 500)
+        self.norm4 = nn.BatchNorm1d(500)
         self.fc2 = nn.Linear(500, 100)
+        self.norm5 = nn.BatchNorm1d(100)
         self.fc3 = nn.Linear(100, 20)
         self.fc4 = nn.Linear(20, 18)
         self.fc5 = nn.Linear(18, 18)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = (F.relu(self.conv3(x)))
-        x = (F.relu(self.conv4(x)))
+        x = self.norm1(self.pool(F.relu(self.conv1(x))))
+        x = self.norm2(self.pool(F.relu(self.conv2(x))))
+        x = self.norm2(F.relu(self.conv3(x)))
+        x = self.norm3(F.relu(self.conv4(x)))
         x = x.view(-1, 8 * self.linear_len * self.linear_len)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        x = self.norm4(self.fc1(x))
+        x = self.norm5(self.fc2(x))
+        x = (self.fc3(x))
         x = self.fc4(x)
         x = (self.fc5(x))
         return x
@@ -89,10 +93,10 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
 
     net.to(device)
     if not optimizer:
-        optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, momentum=0.1)
+        optimizer = torch.optim.SGD(net.parameters(), lr=0.0001, momentum=0.1)
     if not scheduler:
-        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=30, 
-            threshold=1e-6, factor=0.7, min_lr=1e-7)
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, 
+            threshold=1e-6, factor=0.5, min_lr=1e-7)
     for epoch in range(epoch_num):  # loop over the dataset multiple times
         train_loader = DataLoader(dataset=dataset,
                                   batch_size=batch_size, shuffle=True)
@@ -131,7 +135,7 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
     return net
 
 
-def test(net, net_name, dataset):
+def test(net, net_name, dataset=test_set):
     correct = 0
     correct_v2 = 0
     total = 0
@@ -275,7 +279,7 @@ class Coon_0_2(nn.Module):
         first = self.pool(self.conv3(first))
         first = self.pool(self.conv4(first))
         for i in range(3):
-            first = self.conv5(first)
+            first = F.relu(self.conv5(first))
         first = self.conv6(first)
         first = self.conv7(first)
 
@@ -284,10 +288,10 @@ class Coon_0_2(nn.Module):
         second = self.pool(self.conv3(second))
         second = self.pool(self.conv4(second))
         for i in range(3):
-            second = self.conv5(second)
+            second = F.relu(self.conv5(second))
         second = self.conv6(second)
         second = self.conv7(second)
-        y = (first + second).view(batch_size, -1)
+        y = (first + second).view(-1, label_len)
         return y
 
 

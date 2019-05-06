@@ -8,7 +8,7 @@ import numpy as np
 sample_num = 100
 total = 3219
 start = 0
-basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
+basic_dir = '../'
 data_dir = basic_dir + 'raw-data-v5/'
 label_file = basic_dir + 'labels-v5.csv'
 data_file = basic_dir + 'music-data-v5.csv'
@@ -142,20 +142,16 @@ class MusicDataThree(Dataset):
         self.start = start
 
     def __len__(self):
-        return self.len * sample_num
+        # return self.len * sample_num
+        return self.len
 
     def __getitem__(self, idx):
-        idx = int((idx / sample_num + self.start) * sample_num)
-        music_idx = int(idx / sample_num)
-        sample_idx = idx % sample_num
-        row = self.rows[music_idx].split(',')
-        length = len(row)
-        row[length - 1] = row[length - 1].split('\n')[0]
-        interval = int((length - self.sample_len) / (sample_num - 1))
-        start = sample_idx * interval
-        row = list(map(int, row[start: start + self.sample_len]))
+        row = self.rows[idx].split(',')
+        # length = len(row)
+        # row[length - 1] = row[length - 1].split('\n')[0]
+        row = list(map(int, row[0: self.sample_len]))
         data = get_data(row, self.pic_len, self.transform)
-        label = self.labels[music_idx]
+        label = self.labels[idx]
         return data, label
 
 
@@ -170,6 +166,7 @@ class MusicDataFour(Dataset):
         else:
             self.labels = get_label(label_file)
 
+
         self.file_names = os.listdir(path=data_dir)
         self.len = total - start
         self.sample_len = pic_len * pic_len
@@ -179,19 +176,23 @@ class MusicDataFour(Dataset):
         self.data_dir = data_dir
 
     def __len__(self):
-        return self.len * sample_num
+        # return self.len * sample_num
+        return self.len
 
     def __getitem__(self, idx):
-        idx = int((idx / sample_num + self.start) * sample_num)
-        music_idx = int(idx / sample_num)
-        sample_idx = idx % sample_num
-        row = list(csv.reader(open(self.data_dir+self.file_names[music_idx], 'r')))[0]
-        length = len(row)
-        interval = int((length - self.sample_len) / (sample_num - 1))
-        start = sample_idx * interval
-        row = list(map(int, row[start: start + self.sample_len]))
+        # idx = int((idx / sample_num + self.start) * sample_num)
+        # music_idx = int(idx / sample_num)
+        # sample_idx = idx % sample_num
+        # row = list(csv.reader(open(self.data_dir+self.file_names[music_idx], 'r')))[0]
+        row = list(csv.reader(open(self.data_dir+self.file_names[idx], 'r')))[0]
+        # length = len(row)
+        # interval = int((length - self.sample_len) / (sample_num - 1))
+        # start = sample_idx * interval
+        # row = list(map(int, row[start: start + self.sample_len]))
+        row = list(map(int, row[0: self.sample_len]))
         data = get_data(row, self.pic_len, self.transform)
-        label = self.labels[music_idx]
+        # label = self.labels[music_idx]
+        label = self.labels[idx]
         return data, label
 
 
@@ -211,7 +212,7 @@ class ExpNorm(object):
 
 class IniNorm(object):
     """docstring for IniNorm"""
-    def __init__(self, arg):
+    def __init__(self):
         super(IniNorm, self).__init__()
     
 
@@ -220,4 +221,5 @@ class IniNorm(object):
         freq_data = np.array(data[1])
         time_data = (time_data - np.min(time_data)) / (np.max(time_data) - np.min(time_data))
         freq_data = (freq_data - np.min(freq_data)) / (np.max(freq_data) - np.min(freq_data))
+        return torch.Tensor([time_data, freq_data])
         

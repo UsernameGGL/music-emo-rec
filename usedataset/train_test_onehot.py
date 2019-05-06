@@ -17,7 +17,7 @@ epoch_num = 3
 type_num = 855
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
-basic_dir = '../'
+basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 data_file = basic_dir + 'music-data-v5.csv'
 label_file = basic_dir + 'one-hot-label.csv'
 record_file = 'record-one-hot.txt'
@@ -138,12 +138,16 @@ def test(net, net_name, dataset):
                 _, idx = torch.sort(outputs[k], descending=True)
                 if idx[0] == labels[k]:
                     correct += 1
-                    pass
-            tmp_loss = abs(outputs.data - labels).sum().item()
-            loss += tmp_loss
+                else:
+                    loss += (idx[0] - labels[k]) * (idx[0] - labels[k])
+            # tmp_loss = abs(outputs.data - labels).sum().item()
+            # loss += tmp_loss
             # print('Accuracy of the network on the test images: %f %%' % (
             # 100 * correct / total))
             # print('Loss of the network: {}'.format(loss))
+            print('Accuracy of the network on the test images: %f %%' % (
+            100 * correct / total))
+            print('Loss of the network: {}'.format(loss))
 
     print('Accuracy of the network on the test images: %f %%' % (
             100 * correct / total))
