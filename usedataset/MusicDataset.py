@@ -150,7 +150,9 @@ class MusicDataThree(Dataset):
         row = self.rows[idx].split(',')
         # length = len(row)
         # row[length - 1] = row[length - 1].split('\n')[0]
-        row = list(map(int, row[0: self.sample_len]))
+        # start = random.randint(0, length - self.sample_len)
+        start = 0
+        row = list(map(int, row[start: start + self.sample_len]))
         data = get_data(row, self.pic_len, self.transform)
         label = self.labels[idx]
         return data, label
@@ -191,7 +193,7 @@ class MusicDataFour(Dataset):
         # start = sample_idx * interval
         # start = random.randint(0, length - self.sample_len)
         # row = list(map(int, row[start: start + self.sample_len]))
-        # row = list(map(int, row[start: self.sample_len]))
+        row = list(map(int, row[0: self.sample_len]))
         data = get_data(row, self.pic_len, self.transform)
         # label = self.labels[music_idx]
         label = self.labels[idx]
