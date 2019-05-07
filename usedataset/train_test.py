@@ -8,10 +8,10 @@ from MusicDataset import MusicDataThree
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 train_start = 0
-train_end = 128  # 用来训练的曲子数
+train_end = 1  # 用来训练的曲子数
 test_start = 0
-test_end = 128
-batch_size = 128
+test_end = 1
+batch_size = 1
 pic_len = 256
 label_len = 18
 epoch_num = 10000
@@ -55,8 +55,8 @@ class Justreducelr_0(nn.Module):
         x = self.norm2(F.relu(self.conv3(x)))
         x = self.norm3(F.relu(self.conv4(x)))
         x = x.view(-1, 8 * self.linear_len * self.linear_len)
-        x = self.norm4(self.fc1(x))
-        x = self.norm5(self.fc2(x))
+        x = (self.fc1(x))
+        x = (self.fc2(x))
         x = (self.fc3(x))
         x = self.fc4(x)
         x = (self.fc5(x))

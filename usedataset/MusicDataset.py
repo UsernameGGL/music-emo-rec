@@ -4,6 +4,7 @@ import os
 import torch
 import statistics
 import numpy as np
+import random
 
 sample_num = 100
 total = 3219
@@ -188,8 +189,9 @@ class MusicDataFour(Dataset):
         # length = len(row)
         # interval = int((length - self.sample_len) / (sample_num - 1))
         # start = sample_idx * interval
+        # start = random.randint(0, length - self.sample_len)
         # row = list(map(int, row[start: start + self.sample_len]))
-        row = list(map(int, row[0: self.sample_len]))
+        # row = list(map(int, row[start: self.sample_len]))
         data = get_data(row, self.pic_len, self.transform)
         # label = self.labels[music_idx]
         label = self.labels[idx]
