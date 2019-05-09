@@ -3,3 +3,13 @@ Accuracy of the network on the test images: 70.138889 %
 Loss of the network: 688.0
 My_Accuracy of the network on the test images: 0.000000 %
 My_Accuracy_4 of the network on the test images: 52.085816 %
+This is the result of0-justreducelr
+Accuracy of the network on the test images: 69.314236 %
+Loss of the network: 707.0
+My_Accuracy of the network on the test images: 0.000000 %
+My_Accuracy_4 of the network on the test images: 51.966627 %
+This is the result of0-justreducelr
+Accuracy of the network on the test images: 69.227431 %
+Loss of the network: 709.0
+My_Accuracy of the network on the test images: 0.000000 %
+My_Accuracy_4 of the network on the test images: 51.966627 %

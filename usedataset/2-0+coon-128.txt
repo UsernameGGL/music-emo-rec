@@ -1,0 +1,5 @@
+This is the result of2-0+coon-128
+Accuracy of the network on the test images: 65.234375 %
+Loss of the network: 801.0
+My_Accuracy of the network on the test images: 0.000000 %
+My_Accuracy_4 of the network on the test images: 41.597139 %

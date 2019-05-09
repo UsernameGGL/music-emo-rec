@@ -8,7 +8,7 @@ from MusicDataset import MusicDataThree
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 train_start = 0
-train_end = 2560  # 用来训练的曲子数
+train_end = 128  # 用来训练的曲子数
 test_start = 2560
 test_end = 3219
 batch_size = 128
@@ -89,10 +89,52 @@ class Justreducelr_0_ini(nn.Module):
         return x
 
 
+class SimpleCNN(nn.Module):
+    """docstring for SimpleCNN"""
+    def __init__(self):
+        super(SimpleCNN, self).__init__()
+        self.conv = nn.Sequential(
+                nn.Conv2d(1, 6, 2),
+                nn.ReLU(True),
+                nn.Conv2d(6, 12, 2),
+                nn.ReLU(True),
+                nn.Conv2d(12, 18, 2),
+                nn.ReLU(True)
+            )
+        self.fc = nn.Sequential(
+                nn.Linear(18, 36),
+                nn.ReLU(True),
+                nn.Linear(36, 54),
+                nn.ReLU(True),
+                nn.Linear(54, 18)
+            )
+        self.classifier = nn.Sequential(
+                nn.Linear(16, 32),
+                nn.ReLU(True),
+                nn.Linear(32, 64),
+                nn.ReLU(True),
+                nn.Linear(64, 128),
+                nn.ReLU(True),
+                nn.Linear(128, 64),
+                nn.ReLU(True),
+                nn.Linear(64, 32),
+                nn.ReLU(True),
+                nn.Linear(32, 18)
+            )
+
+
+    def forward(self, x):
+        # x = self.conv(x).view(-1, 18)
+        # return self.fc(x).view(-1, 18)
+        return self.classifier(x.view(-1, 16))
+        
+        
+
+
 def weights_init(m):
     if isinstance(m, nn.Conv2d):
-        nn.init.normal_(m.weight.data, mean=0, std=100)
-        nn.init.normal_(m.bias.data, mean=0, std=100)
+        nn.init.normal_(m.weight.data, mean=0, std=10)
+        nn.init.normal_(m.bias.data, mean=0, std=10)
 
 
 net = Justreducelr_0()
@@ -127,10 +169,10 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
 
     net.to(device)
     if not optimizer:
-        # optimizer = torch.optim.SGD(net.parameters(), lr=2, momentum=0.1)
-        optimizer = torch.optim.Adam(net.parameters(), lr = 10)
+        # optimizer = torch.optim.SGD(net.parameters(), lr=0.1, momentum=0.1)
+        optimizer = torch.optim.Adam(net.parameters(), lr = 0.1)
     if not scheduler:
-        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=10, 
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=30, 
             threshold=1e-6, factor=0.5, min_lr=1e-6)
     running_loss = 0.0
     for epoch in range(epoch_num):  # loop over the dataset multiple times
@@ -193,7 +235,7 @@ def test(net, net_name, dataset=test_set):
             # ####################################################here
             outputs = sigmoid(outputs)
             # print(2, outputs)
-            for k in range(batch_size):
+            for k in range(len(outputs)):
                 _, index = torch.sort(outputs[k], descending=True)
                 emotion_num = int(torch.sum(labels[k]).item())
                 total_v4 += emotion_num
@@ -311,7 +353,7 @@ class Coon_0_2(nn.Module):
         self.conv1 = nn.Conv2d(1, 6, 3)
         self.conv2 = nn.Conv2d(6, 6, 3)
         self.conv3 = nn.Conv2d(6, 12, 3)
-        self.conv4 = nn.Conv2d(12, 15, 3)
+        self.conv4 = nn.Conv2d(12, 15, 2)
         self.conv5 = nn.Conv2d(15, 18, 3)
         self.norm1 = nn.GroupNorm(3, 6)
         self.norm2 = nn.GroupNorm(4, 12)
@@ -323,17 +365,17 @@ class Coon_0_2(nn.Module):
         first = torch.unsqueeze(x[:, 0], 1)
         second = torch.unsqueeze(x[:, 1], 1)
         # third = x[:, 2]
-        first = self.pool(F.relu(self.norm1(self.conv1(first))))
+        first = (F.relu(self.norm1(self.conv1(first))))
         # first = self.pool(F.relu(self.norm1(self.conv2(first))))
-        for i in range(60):
+        for i in range(124):
             first = F.relu(self.norm1(self.conv2(first)))
         first = F.relu(self.norm2(self.conv3(first)))
         first = F.relu(self.norm3(self.conv4(first)))
         first = F.relu(self.norm4(self.conv5(first)))
 
-        second = self.pool(F.relu(self.norm1(self.conv1(second))))
+        second = (F.relu(self.norm1(self.conv1(second))))
         # second = self.pool(F.relu(self.norm1(self.conv2(second))))
-        for i in range(60):
+        for i in range(124):
             second = F.relu(self.norm1(self.conv2(second)))
         second = F.relu(self.norm2(self.conv3(second)))
         second = F.relu(self.norm3(self.conv4(second)))

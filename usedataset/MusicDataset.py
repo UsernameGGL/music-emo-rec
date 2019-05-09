@@ -200,6 +200,53 @@ class MusicDataFour(Dataset):
         return data, label
 
 
+class Musicdata_v7(Dataset):
+    """docstring for Musicdata_v7"""
+    def __init__(self, data_file, label_file=label_file,
+     transform=None, start=start, total=total, mode='normal'):
+        super(Musicdata_v7, self).__init__()
+        data_file = open(data_file, 'r')
+        self.rows = list(csv.reader(data_file))
+        self.len = total - start
+        self.transform = transform
+        self.start = start
+        self.labels = get_label(label_file)
+
+
+    def __len__(self):
+        return self.len
+
+
+    def __getitem__(self, idx):
+        data = torch.Tensor(list(map(float, self.rows[idx]))[0: 16]).view(1, 4, 4)
+        label = self.labels[idx]
+        return data, label
+
+
+class Musicdata_LSTM(Dataset):
+    """docstring for Musicdata_LSTM"""
+    def __init__(self, data_file, label_file=label_file,
+     transform=None, start=start, total=total, mode='normal'):
+        super(Musicdata_LSTM, self).__init__()
+        data_file = open(data_file, 'r')
+        self.rows = list(csv.reader(data_file))
+        self.len = total - start
+        self.transform = transform
+        self.start = start
+        self.labels = get_label(label_file)
+
+
+    def __len__(self):
+        return self.len
+
+
+    def __getitem__(self, idx):
+        data = torch.Tensor(list(map(float, self.rows[idx]))[0: 16]).view(1, 16)
+        label = self.labels[idx].view(1, 18)
+        return data, label
+        
+
+
 class ExpNorm(object):
     """docstring for ExpNorm"""
     def __init__(self):
