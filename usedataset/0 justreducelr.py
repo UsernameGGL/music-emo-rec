@@ -6,7 +6,7 @@ from train_test import train, test, set_record_file
 print('start')
 net_name = '0-justreducelr'
 model_path = net_name + '.pt'
-set_record_file('record' + net_name + '.txt')
+set_record_file('record-60.txt')
 net = train(model_path=model_path)
 test(net, net_name)
 

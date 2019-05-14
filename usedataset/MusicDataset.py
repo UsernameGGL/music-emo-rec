@@ -2,7 +2,7 @@ from torch.utils.data import Dataset
 import csv
 import os
 import torch
-import statistics
+# import statistics
 import numpy as np
 import random
 
@@ -12,7 +12,7 @@ start = 0
 basic_dir = '../'
 data_dir = basic_dir + 'raw-data-v5/'
 label_file = basic_dir + 'labels-v5.csv'
-data_file = basic_dir + 'music-data-v5.csv'
+data_file = basic_dir + 'music-data-v8.csv'
 
 
 def one_hot_label(label_file):
@@ -42,9 +42,9 @@ def get_label(label_file):
 def get_data(time_data, pic_len, transform):
     sample_len = pic_len * pic_len
     freq_data = abs(np.fft.fft(time_data) / sample_len)
-    freq_data[0] = statistics.mean(freq_data[1:])
+    freq_data[0] = freq_data[1]
     time_data = np.array(time_data).reshape(pic_len, pic_len)
-    freq_data = np.array(freq_data).reshape(pic_len, pic_len)
+    freq_data = np.array(freq_data).reshape(pic_len, pic_len)*200
     data = torch.Tensor([time_data, freq_data])
     if transform:
         data = transform(data)
@@ -152,7 +152,7 @@ class MusicDataThree(Dataset):
         # row[length - 1] = row[length - 1].split('\n')[0]
         # start = random.randint(0, length - self.sample_len)
         start = 0
-        row = list(map(int, row[start: start + self.sample_len]))
+        row = list(map(float, row[start: start + self.sample_len]))
         data = get_data(row, self.pic_len, self.transform)
         label = self.labels[idx]
         return data, label
@@ -244,7 +244,31 @@ class Musicdata_LSTM(Dataset):
         data = torch.Tensor(list(map(float, self.rows[idx]))[0: 16]).view(1, 16)
         label = self.labels[idx].view(1, 18)
         return data, label
-        
+
+
+class Musicdata_Bin(Dataset):
+    def __init__(self, data_file, label_file=label_file,
+     transform=None, start=start, total=total, clsf_idx=0):
+        data_file = open(data_file, 'r')
+        self.rows = list(csv.reader(data_file))
+        self.len = total - start
+        self.transform = transform
+        self.start = start
+        self.labels = get_label(label_file)
+        self.clsf_idx = clsf_idx
+
+
+    def __len__(self):
+        return self.len
+
+
+    def __getitem__(self, idx):
+        length = len(self.rows[idx])
+        start = random.randint(0, length - 16)
+        data = torch.Tensor(list(map(float, self.rows[idx]))[start: start + 16]).view(1, 4, 4)
+        label = (self.labels[idx][self.clsf_idx]).long()
+        # label = torch.LongTensor([label, 1-label])
+        return data, label
 
 
 class ExpNorm(object):
