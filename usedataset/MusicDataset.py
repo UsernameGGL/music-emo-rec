@@ -223,6 +223,29 @@ class Musicdata_v7(Dataset):
         return data, label
 
 
+class Musicdata_v9(Dataset):
+    """docstring for Musicdata_v9"""
+    def __init__(self, data_file=basic_dir + 'music-data-v9.csv', label_file=label_file,
+     transform=None, start=start, total=total, mode='normal'):
+        super(Musicdata_v9, self).__init__()
+        data_file = open(data_file, 'r')
+        self.rows = list(csv.reader(data_file))
+        self.len = total - start
+        self.transform = transform
+        self.start = start
+        self.labels = get_label(label_file)
+
+
+    def __len__(self):
+        return self.len
+
+
+    def __getitem__(self, idx):
+        data = torch.Tensor(list(map(float, self.rows[idx]))[0: 64]).view(1, 8, 8)
+        label = self.labels[idx]
+        return data, label
+
+
 class Musicdata_LSTM(Dataset):
     """docstring for Musicdata_LSTM"""
     def __init__(self, data_file, label_file=label_file,

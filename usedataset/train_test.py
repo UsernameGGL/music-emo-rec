@@ -14,7 +14,7 @@ test_end = 3219
 batch_size = 128
 pic_len = 256
 label_len = 18
-epoch_num = 5000
+epoch_num = 125
 record_cnt = 10
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
@@ -24,7 +24,7 @@ label_file = basic_dir + 'labels_v4_back.csv'
 data_file = basic_dir + 'music-data-v4.csv'
 basic_dir = '../'
 # basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
-data_file = basic_dir + 'music-data-v8.csv'
+data_file = basic_dir + 'music-data-v5.csv'
 label_file = basic_dir + 'labels-v5.csv'
 record_file = 'record-one-hot.txt'
 
@@ -97,11 +97,18 @@ class SimpleCNN(nn.Module):
         super(SimpleCNN, self).__init__()
         self.conv = nn.Sequential(
                 nn.Conv2d(1, 6, 2),
-                nn.ReLU(True),
+                nn.LeakyReLU(0.1),
                 nn.Conv2d(6, 12, 2),
-                nn.ReLU(True),
+                nn.LeakyReLU(0.1),
                 nn.Conv2d(12, 18, 2),
-                nn.ReLU(True)
+                nn.LeakyReLU(0.1),
+                nn.Conv2d(18, 24, 2),
+                nn.LeakyReLU(0.1),
+                nn.Conv2d(24, 30, 2),
+                nn.LeakyReLU(0.1),
+                nn.Conv2d(30, 24, 2),
+                nn.LeakyReLU(0.1),
+                nn.Conv2d(24, 18, 2)
             )
         self.fc = nn.Sequential(
                 nn.Linear(18, 36),
@@ -112,15 +119,16 @@ class SimpleCNN(nn.Module):
             )
         self.classifier = nn.Sequential(
                 nn.Linear(16, 32),
-                nn.ReLU(True),
+                nn.LeakyReLU(0.1),
                 nn.Linear(32, 64),
-                nn.ReLU(True),
+                nn.LeakyReLU(0.1),
                 nn.Linear(64, 128),
-                nn.ReLU(True),
+                nn.LeakyReLU(0.1),
                 nn.Linear(128, 64),
-                nn.ReLU(True),
+                nn.LeakyReLU(0.1),
                 nn.Linear(64, 32),
-                nn.ReLU(True),
+                nn.LeakyReLU(0.1),
+                nn.Linear(32, 32),
                 nn.Linear(32, 18)
             )
 
@@ -128,9 +136,31 @@ class SimpleCNN(nn.Module):
     def forward(self, x):
         # x = self.conv(x).view(-1, 18)
         # return self.fc(x).view(-1, 18)
-        return self.classifier(x.view(-1, 16))
-        
-        
+        # return self.classifier(x.view(-1, 16))
+        return self.conv(x).view(-1, 18)
+
+
+class ShallowNet(nn.Module):
+    """docstring for ShallowNet"""
+    def __init__(self):
+        super(ShallowNet, self).__init__()
+        self.classifier = nn.Sequential(
+                nn.Conv2d(2, 6, 5),
+                nn.LeakyReLU(0.1),
+                nn.MaxPool2d(3),
+                nn.Conv2d(6, 6, 4),
+                nn.LeakyReLU(0.1),
+                nn.MaxPool2d(3),
+                nn.Conv2d(6, 6, 4),
+                nn.LeakyReLU(0.1),
+                nn.MaxPool2d(3),
+                nn.Conv2d(6, 12, 5),
+                nn.Conv2d(12, 18, 4)
+            )
+
+
+    def forward(self, x):
+        return self.classifier(x).view(-1, 18)
 
 
 def weights_init(m):
@@ -172,9 +202,9 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
     net.to(device)
     if not optimizer:
         # optimizer = torch.optim.SGD(net.parameters(), lr=0.1, momentum=0.1)
-        optimizer = torch.optim.Adam(net.parameters(), lr = 0.1)
+        optimizer = torch.optim.Adam(net.parameters(), lr = 0.001)
     if not scheduler:
-        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=100, 
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=100,
             threshold=1e-6, factor=0.5, min_lr=1e-6)
     for epoch in range(epoch_num):  # loop over the dataset multiple times
         train_loader = DataLoader(dataset=dataset,
@@ -204,7 +234,7 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
                 print('[%d, %5d] loss: %f' %
                       (epoch + 1, i + 1, running_loss / record_cnt))
                 with open(record_file, 'a') as f:
-                    f.write(str(running_loss / record_cnt))
+                    f.write(str(running_loss / record_cnt) + '\n')
                 running_loss = 0.0
                 torch.save(net.state_dict(), model_path)
 
@@ -215,14 +245,9 @@ def train(net=net, criterion=criterion, model_path='tmp.pt', dataset=train_set, 
 
 def test(net, net_name, dataset=test_set):
     correct = 0
-    correct_v2 = 0
     total = 0
     loss = 0
     sigmoid = nn.Sigmoid()
-    my_total = 0
-    correct_v3 = 0
-    correct_v4 = 0
-    total_v4 = 0
     # threshold = 0
     with torch.no_grad():
         test_loader = DataLoader(dataset=dataset,
@@ -232,19 +257,7 @@ def test(net, net_name, dataset=test_set):
             images = images.to(device)
             labels = labels.to(device)
             outputs = net(images)
-            # print(1, outputs)
-            # ####################################################here
             outputs = sigmoid(outputs)
-            # print(2, outputs)
-            for k in range(len(outputs)):
-                _, index = torch.sort(outputs[k], descending=True)
-                emotion_num = int(torch.sum(labels[k]).item())
-                total_v4 += emotion_num
-                for kk in range(emotion_num):
-                    if labels[k][index[kk]] == 1:
-                        correct_v4 += 1
-            # print(torch.min(outputs))
-            # print(torch.max(outputs))
             one_correct = 0
             for i in np.arange(0.3, 0.7, 0.01):
                 tmp_outputs = outputs.clone()
@@ -259,50 +272,16 @@ def test(net, net_name, dataset=test_set):
             outputs = r_outputs
             # outputs = torch.round(outputs)
             total += labels.size(0)*label_len
-            ########################################
-            my_total += labels[labels == 1].sum().item()
             correct += one_correct
-            # correct += (outputs.data == labels).sum().item()
-            # loss += abs(outputs.data - labels).sum().item()
             tmp_loss = abs(outputs.data - labels).sum().item()
-            if tmp_loss == 0:
-                correct_v2 += 1
             loss += tmp_loss
-            ####################################
-            for k in range(batch_size):
-                for kk in range(label_len):
-                    if labels[k][kk] == 1 and outputs[k][kk] == 1:
-                        correct_v3 += 1
-            # print('Accuracy of the network on the test images: %f %%' % (
-            # 100 * correct / total))
-            # print('Loss of the network: {}'.format(loss))
-            # print('My_Accuracy of the network on the test images: %f %%' % (
-            #         100 * correct_v2 / total))
-            # print('My_Accuracy_2 of the network on the test images: %f %%' % (
-            #         100 * correct_v3 / my_total))
-            # print('My_Accuracy_4 of the network on the test images: %f %%' % (
-            #         100 * correct_v4 / total_v4))
 
     print('Accuracy of the network on the test images: %f %%' % (
             100 * correct / total))
     print('Loss of the network: {}'.format(loss))
-    # print('My_Accuracy of the network on the test images: %f %%' % (
-    #         100 * correct_v2 / total))
-    # print('My_Accuracy_2 of the network on the test images: %f %%' % (
-    #         100 * correct_v3 / my_total))
-    # print('My_Accuracy_4 of the network on the test images: %f %%' % (
-    #         100 * correct_v4 / total_v4))
     with open(record_file, 'a') as f:
         f.write('This is the result of' + net_name + '\n')
-        # f.write('Accuracy of the network on the test images: %f %%\n' % (
-        #     100 * correct / total))
-        # f.write('Loss of the network: {}\n'.format(loss))
-        f.write(str(100 * correct / total))
-        f.write(str(loss))
-        # f.write('My_Accuracy of the network on the test images: %f %%\n' % (
-        #     100 * correct_v2 / total))
-        # f.write('My_Accuracy_4 of the network on the test images: %f %%\n' % (
-        #     100 * correct_v4 / total_v4))
+        f.write(str(100 * correct / total) + '\n')
 
 
 class Norm_0_1(nn.Module):
