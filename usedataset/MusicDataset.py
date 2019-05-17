@@ -249,7 +249,7 @@ class Musicdata_v9(Dataset):
 class Musicdata_LSTM(Dataset):
     """docstring for Musicdata_LSTM"""
     def __init__(self, data_file, label_file=label_file,
-     transform=None, start=start, total=total, mode='normal'):
+     transform=None, start=start, total=total, mode='deep'):
         super(Musicdata_LSTM, self).__init__()
         data_file = open(data_file, 'r')
         self.rows = list(csv.reader(data_file))
@@ -257,6 +257,10 @@ class Musicdata_LSTM(Dataset):
         self.transform = transform
         self.start = start
         self.labels = get_label(label_file)
+        if mode == 'deep':
+            self.data_len = 65536
+        else:
+            self.data_len = 16
 
 
     def __len__(self):
@@ -264,7 +268,7 @@ class Musicdata_LSTM(Dataset):
 
 
     def __getitem__(self, idx):
-        data = torch.Tensor(list(map(float, self.rows[idx]))[0: 16]).view(1, 16)
+        data = torch.Tensor(list(map(float, self.rows[idx]))[0: self.data_len]).view(1, self.data_len)
         label = self.labels[idx].view(1, 18)
         return data, label
 

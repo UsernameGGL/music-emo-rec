@@ -1,6 +1,6 @@
 import csv
 import os
-sum_num = 1024
+sum_num = 4096
 basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 data_dir = basic_dir + 'raw-data-v5/'
 # label_file = basic_dir + 'labels-v5.csv'

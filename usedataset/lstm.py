@@ -1,5 +1,5 @@
 import torch.nn as nn
-from train_test import train, test
+from train_test_lstm import train, test
 from MusicDataset import Musicdata_LSTM
 basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 data_file = basic_dir + 'music-data-v7.csv'

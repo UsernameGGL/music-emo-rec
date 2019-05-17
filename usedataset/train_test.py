@@ -14,7 +14,7 @@ test_end = 3219
 batch_size = 128
 pic_len = 256
 label_len = 18
-epoch_num = 125
+epoch_num = 30
 record_cnt = 10
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device('cpu')
@@ -93,28 +93,16 @@ class Justreducelr_0_ini(nn.Module):
 
 class SimpleCNN(nn.Module):
     """docstring for SimpleCNN"""
-    def __init__(self):
+    def __init__(self, mode):
         super(SimpleCNN, self).__init__()
         self.conv = nn.Sequential(
                 nn.Conv2d(1, 6, 2),
-                nn.LeakyReLU(0.1),
                 nn.Conv2d(6, 12, 2),
-                nn.LeakyReLU(0.1),
                 nn.Conv2d(12, 18, 2),
-                nn.LeakyReLU(0.1),
-                nn.Conv2d(18, 24, 2),
-                nn.LeakyReLU(0.1),
-                nn.Conv2d(24, 30, 2),
-                nn.LeakyReLU(0.1),
-                nn.Conv2d(30, 24, 2),
-                nn.LeakyReLU(0.1),
-                nn.Conv2d(24, 18, 2)
             )
         self.fc = nn.Sequential(
-                nn.Linear(18, 36),
-                nn.ReLU(True),
+                nn.Linear(16, 36),
                 nn.Linear(36, 54),
-                nn.ReLU(True),
                 nn.Linear(54, 18)
             )
         self.classifier = nn.Sequential(
@@ -131,14 +119,42 @@ class SimpleCNN(nn.Module):
                 nn.Linear(32, 32),
                 nn.Linear(32, 18)
             )
+        self.conv_el = nn.Sequential(
+                nn.Conv2d(1, 6, 2),
+                nn.Conv2d(6, 12, 3),
+            )
+        self.fc_el = nn.Linear(12, 18)
+        self.mode = mode
 
 
     def forward(self, x):
         # x = self.conv(x).view(-1, 18)
         # return self.fc(x).view(-1, 18)
         # return self.classifier(x.view(-1, 16))
-        return self.conv(x).view(-1, 18)
+        # return self.conv(x).view(-1, 18)
+        if self.mode == 'conv':
+            return self.conv(x).view(-1, 18)
+        elif self.mode == 'fully':
+            return self.fc(x.view(-1, 16))
+        else:
+            x = self.conv_el(x).view(-1, 12)
+            return self.fc_el(x)
 
+
+class FullyCon(object):
+    """docstring for FullyCon"""
+    def __init__(self):
+        super(FullyCon, self).__init__()
+        self.fc = nn.Sequential(
+                nn.Linear(16, 36),
+                nn.Linear(36, 54),
+                nn.Linear(54, 18)
+            )
+
+
+    def forward(self, x):
+        return self.fc(x.view(-1, 16))
+        
 
 class ShallowNet(nn.Module):
     """docstring for ShallowNet"""
@@ -251,7 +267,7 @@ def test(net, net_name, dataset=test_set):
     # threshold = 0
     with torch.no_grad():
         test_loader = DataLoader(dataset=dataset,
-                                 batch_size=batch_size, shuffle=True)
+                                 batch_size=batch_size, shuffle=False)
         for data in test_loader:
             images, labels = data
             images = images.to(device)
@@ -281,6 +297,7 @@ def test(net, net_name, dataset=test_set):
     print('Loss of the network: {}'.format(loss))
     with open(record_file, 'a') as f:
         f.write('This is the result of' + net_name + '\n')
+        f.write('Loss of the network: {}'.format(loss))
         f.write(str(100 * correct / total) + '\n')
 
 
