@@ -44,13 +44,6 @@ record_num = 10
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = torch.device('cpu')
 
-
-
-# MNIST dataset
-
-train_set = Musicdata_LSTM(data_file=data_file, label_file=label_file, start=0, total=2560)
-test_set = Musicdata_LSTM(data_file=data_file, label_file=label_file, start=2560, total=3219)
-
 # Data loader
 train_loader = torch.utils.data.DataLoader(dataset=train_set,
                                            batch_size=batch_size, 

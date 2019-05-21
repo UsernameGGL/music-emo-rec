@@ -252,7 +252,7 @@ class Musicdata_LSTM(Dataset):
      transform=None, start=start, total=total, mode='deep'):
         super(Musicdata_LSTM, self).__init__()
         data_file = open(data_file, 'r')
-        self.rows = list(csv.reader(data_file))
+        self.rows = data_file.readlines()
         self.len = total - start
         self.transform = transform
         self.start = start
@@ -268,7 +268,8 @@ class Musicdata_LSTM(Dataset):
 
 
     def __getitem__(self, idx):
-        data = torch.Tensor(list(map(float, self.rows[idx]))[0: self.data_len]).view(1, self.data_len)
+        row = self.rows[idx].split(',')
+        data = torch.Tensor(list(map(float, row))[0: self.data_len]).view(1, self.data_len)
         label = self.labels[idx].view(1, 18)
         return data, label
 

@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 def plt_nocl(record_file, net_name):
 	file = open(record_file)
 	data = []
@@ -18,12 +19,17 @@ def plt_nocl(record_file, net_name):
 						i = j
 						break
 				data_len += 1
-	print(min(data))
-	print(len(data))
 	data = data[0: 250]
-	epoch = [i for i in range(1, 251)]
+	std_arr = np.array(data[50: ])
+	print(np.std(std_arr))
+	print(min(data))
+	# print(len(data))
+	length = len(data)
+	epoch = [i for i in range(1, length + 1)]
 	plt.plot(epoch, data)
 	plt.xlabel('Epoch')
 	plt.ylabel('Loss')
+	# plt.yticks([])
+	# plt.ylim(0.55, 0.70)
 	plt.title('Loss of ' + net_name)
 	plt.show()
