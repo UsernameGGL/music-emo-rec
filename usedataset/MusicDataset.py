@@ -194,7 +194,8 @@ class MusicDataFour(Dataset):
         # start = random.randint(0, length - self.sample_len)
         # row = list(map(int, row[start: start + self.sample_len]))
         row = list(map(int, row[0: self.sample_len]))
-        data = get_data(row, self.pic_len, self.transform)
+        # data = get_data(row, self.pic_len, self.transform)
+        data = torch.Tensor(row).reshape(self.pic_len, self.pic_len)
         # label = self.labels[music_idx]
         label = self.labels[idx]
         return data, label

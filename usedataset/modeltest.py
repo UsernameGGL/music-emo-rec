@@ -11,80 +11,85 @@ basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 basic_dir = '../'
 
 
-
-# data_dir = basic_dir + 'raw-data-v5/'
-# data_file = basic_dir + 'music-data-v5.csv'
-# label_file = basic_dir + 'labels-v5.csv'
-# # net_name = 'shallownet'
-# net_name = '0-justreducelr'
-# # net_name = 'simplecnn-freq'
-# model_name = net_name + '.pt'
-# set_record_file('record-modeltest.txt')
-# net = Justreducelr_0()# deep convolutional network
-# net.load_state_dict(torch.load(model_name))
-# net.eval()
-# # test_set = MusicDataThree(data_file=data_file, label_file=label_file, start=2560, total=3219)
-# test_set = MusicDataThree(data_file=data_file, label_file=label_file, start=2560, total=3219)
-# test(net, net_name=net_name, dataset=test_set)
-
-
-# data_file = basic_dir + 'music-data-v5.csv'
-# label_file = basic_dir + 'labels-v5.csv'
-# net = ShallowNet()
+print('Test of deep convolutional network')
+data_dir = basic_dir + 'raw-data-v5/'
+data_file = basic_dir + 'music-data-v5.csv'
+label_file = basic_dir + 'labels-v5.csv'
 # net_name = 'shallownet'
-# model_name = net_name + '.pt'
-# net.load_state_dict(torch.load(model_name))
-# net.eval()
+net_name = '0-justreducelr'
+# net_name = 'simplecnn-freq'
+model_name = net_name + '.pt'
+set_record_file('record-modeltest.txt')
+net = Justreducelr_0()# deep convolutional network
+net.load_state_dict(torch.load(model_name))
+net.eval()
 # test_set = MusicDataThree(data_file=data_file, label_file=label_file, start=2560, total=3219)
-# test(net, net_name=net_name, dataset=test_set)
+test_set = MusicDataThree(data_file=data_file, label_file=label_file, start=2560, total=3219)
+test(net, net_name=net_name, dataset=test_set)
 
 
-# data_file = basic_dir + 'music-data-v9.csv'
-# label_file = basic_dir + 'labels-v5.csv'
-# mode = 'conv'
-# net = SimpleCNN(mode)
-# net_name = 'fzdata'
-# model_name = net_name + '.pt'
-# net.load_state_dict(torch.load(model_name))
-# net.eval()
-# test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
-# test(net, net_name=net_name, dataset=test_set)
+print('Test of shallow convolutional network')
+data_file = basic_dir + 'music-data-v5.csv'
+label_file = basic_dir + 'labels-v5.csv'
+net = ShallowNet()
+net_name = 'shallownet'
+model_name = net_name + '.pt'
+net.load_state_dict(torch.load(model_name))
+net.eval()
+test_set = MusicDataThree(data_file=data_file, label_file=label_file, start=2560, total=3219)
+test(net, net_name=net_name, dataset=test_set)
 
 
-# data_file = basic_dir + 'music-data-v9-freq.csv'
-# label_file = basic_dir + 'labels-v5.csv'
-# mode = 'conv'
-# net = SimpleCNN(mode)
-# net_name = 'fzdata-freq'
-# model_name = net_name + '.pt'
-# net.load_state_dict(torch.load(model_name))
-# net.eval()
-# test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
-# test(net, net_name=net_name, dataset=test_set)
+print('Test on fuzzy data')
+data_file = basic_dir + 'music-data-v9.csv'
+label_file = basic_dir + 'labels-v5.csv'
+mode = 'conv'
+net = SimpleCNN(mode)
+net_name = 'fzdata'
+model_name = net_name + '.pt'
+net.load_state_dict(torch.load(model_name))
+net.eval()
+test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
+test(net, net_name=net_name, dataset=test_set)
 
 
-# data_file = basic_dir + 'music-data-v9.csv'
-# label_file = basic_dir + 'labels-v5.csv'
-# mode = 'fully'
-# net = SimpleCNN(mode)
-# net_name = 'fzdata-fully'
-# model_name = net_name + '.pt'
-# net.load_state_dict(torch.load(model_name))
-# net.eval()
-# test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
-# test(net, net_name=net_name, dataset=test_set)
+print('Test on fuzzy frequency data')
+data_file = basic_dir + 'music-data-v9-freq.csv'
+label_file = basic_dir + 'labels-v5.csv'
+mode = 'conv'
+net = SimpleCNN(mode)
+net_name = 'fzdata-freq'
+model_name = net_name + '.pt'
+net.load_state_dict(torch.load(model_name))
+net.eval()
+test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
+test(net, net_name=net_name, dataset=test_set)
 
 
-# data_file = basic_dir + 'music-data-v9.csv'
-# label_file = basic_dir + 'labels-v5.csv'
-# mode = 'else'
-# net = SimpleCNN(mode)
-# net_name = 'fzdata-comb'
-# model_name = net_name + '.pt'
-# net.load_state_dict(torch.load(model_name))
-# net.eval()
-# test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
-# test(net, net_name=net_name, dataset=test_set)
+print('Test fully network')
+data_file = basic_dir + 'music-data-v9.csv'
+label_file = basic_dir + 'labels-v5.csv'
+mode = 'fully'
+net = SimpleCNN(mode)
+net_name = 'fzdata-fully'
+model_name = net_name + '.pt'
+net.load_state_dict(torch.load(model_name))
+net.eval()
+test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
+test(net, net_name=net_name, dataset=test_set)
+
+
+print('Test of conv with linear network')
+data_file = basic_dir + 'music-data-v9.csv'
+label_file = basic_dir + 'labels-v5.csv'
+mode = 'else'
+net = SimpleCNN(mode)
+net_name = 'fzdata-comb'
+model_name = net_name + '.pt'
+net.load_state_dict(torch.load(model_name))
+net.eval()
+test_set = Musicdata_v7(data_file=data_file, label_file=label_file, start=2560, total=3219)
+test(net, net_name=net_name, dataset=test_set)
 
 
 
@@ -95,7 +100,7 @@ basic_dir = '../'
 
 
 
-
+print('Test of DBLSTM')
 data_file = basic_dir + 'music-data-v5.csv'
 label_file = basic_dir + 'labels-v5.csv'
 num_classes = 18
