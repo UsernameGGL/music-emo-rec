@@ -1,0 +1,32 @@
+
+Test of deep convolutional network
+Accuracy of the network on the test images: 72.247513 %
+Loss of the network: 3292.0
+1.5174506828528074
+66.9500531349628
+Test of shallow convolutional network
+Accuracy of the network on the test images: 72.019895 %
+Loss of the network: 3319.0
+0.6069802731411229
+67.64036418816389
+Test on fuzzy data
+Accuracy of the network on the test images: 72.331816 %
+Loss of the network: 3282.0
+0.9104704097116844
+67.46117732033225
+Test on fuzzy frequency data
+Accuracy of the network on the test images: 72.323386 %
+Loss of the network: 3283.0
+0.9104704097116844
+67.44942196531792
+Test fully network
+Accuracy of the network on the test images: 72.306525 %
+Loss of the network: 3285.0
+0.9104704097116844
+67.42588575560376
+Test of conv with linear network
+Accuracy of the network on the test images: 72.306525 %
+Loss of the network: 3285.0
+0.9104704097116844
+67.43849493487699
+Test of DBLSTM

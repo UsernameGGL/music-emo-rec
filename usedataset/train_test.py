@@ -263,6 +263,12 @@ def test(net, net_name, dataset=test_set):
     correct = 0
     total = 0
     loss = 0
+    total_formal = 0
+    correct_formal = 0
+    total_pre = 0
+    correct_pre = 0
+    total_rec = 0
+    correct_rec = 0
     sigmoid = nn.Sigmoid()
     # threshold = 0
     with torch.no_grad():
@@ -288,17 +294,35 @@ def test(net, net_name, dataset=test_set):
             outputs = r_outputs
             # outputs = torch.round(outputs)
             total += labels.size(0)*label_len
+            total_formal += labels.size(0)
             correct += one_correct
             tmp_loss = abs(outputs.data - labels).sum().item()
+            for iii in range(labels.size(0)):
+                correct_formal += abs(labels[iii] - outputs[iii]).sum().item() == 0
+                for jjj in range(labels[iii].size(0)):
+                    if outputs[iii][jjj]==1:
+                        total_pre+=1
+                        if labels[iii][jjj]==1:
+                            correct_pre+=1
+                    if labels[iii][jjj]==1:
+                        total_rec+=1
+                        if outputs[iii][jjj]==1:
+                            correct_rec+=1
             loss += tmp_loss
 
     print('Accuracy of the network on the test images: %f %%' % (
             100 * correct / total))
     print('Loss of the network: {}'.format(loss))
+    print(100*correct_formal/total_formal)
+    print(100*correct_pre/total_pre)
+    print(100*correct_rec/total_rec)
     with open(record_file, 'a') as f:
         f.write('This is the result of' + net_name + '\n')
         f.write('Loss of the network: {}'.format(loss))
         f.write(str(100 * correct / total) + '\n')
+        f.write(str(100*correct_formal/total_formal) + '\n')
+        f.write(str(100*correct_pre/total_pre)+'\n')
+        f.write(str(100*correct_rec/total_rec)+'\n')
 
 
 class Norm_0_1(nn.Module):

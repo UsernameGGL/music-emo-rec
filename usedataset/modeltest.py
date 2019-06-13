@@ -9,6 +9,7 @@ import numpy as np
 # from MusicDataset import Musicdata_LSTM
 basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'
 basic_dir = '../'
+set_record_file('record-modeltest.txt')
 
 
 print('Test of deep convolutional network')
@@ -19,7 +20,6 @@ label_file = basic_dir + 'labels-v5.csv'
 net_name = '0-justreducelr'
 # net_name = 'simplecnn-freq'
 model_name = net_name + '.pt'
-set_record_file('record-modeltest.txt')
 net = Justreducelr_0()# deep convolutional network
 net.load_state_dict(torch.load(model_name))
 net.eval()
@@ -150,6 +150,12 @@ model.eval()
 with torch.no_grad():
     correct = 0
     total = 0
+    correct_formal = 0
+    total_formal = 0
+    correct_pre = 0
+    total_pre = 0
+    correct_rec = 0
+    total_rec = 0
     sigmoid = nn.Sigmoid()
     for images, labels in test_loader:
         images = images.reshape(-1, sequence_length, input_size).to(device)
@@ -171,10 +177,29 @@ with torch.no_grad():
         # _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0) * num_classes
         correct += (outputs == labels).sum().item()
+        total_formal += labels.size(0)
+        for iii in range(labels.size(0)):
+            correct_formal += abs(labels[iii] - outputs[iii]).sum().item() == 0
+            for jjj in range(labels[iii].size(0)):
+                if outputs[iii][jjj]==1:
+                    total_pre+=1
+                    if labels[iii][jjj]==1:
+                        correct_pre+=1
+                if labels[iii][jjj]==1:
+                    total_rec+=1
+                    if outputs[iii][jjj]==1:
+                        correct_rec+=1
 
     print('Test Accuracy of the model on the test images: {} %'.format(100 * correct / total)) 
+    print(100*correct_formal/total_formal)
+    print(100*correct_pre/total_pre)
+    print(100*correct_rec/total_rec)
     with open(record_file, 'a') as f:
+        f.write('------------------------------\n')
         f.write(str(100 * correct / total) + '\n')
+        f.write(str(100 * correct_formal / total_formal) + '\n')
+        f.write(str(100 * correct_pre / total_pre) + '\n')
+        f.write(str(100 * correct_rec / total_rec) + '\n')
 
 
 # basic_dir = 'D:/OneDrive-UCalgary/OneDrive - University of Calgary/data/cal500/'

@@ -5,6 +5,7 @@ record_files = ['record-shallownet.txt', 'record-fzdata.txt',
 		'record-fzdata-fully.txt', 'record-fzdata-comb.txt']
 labels = ['shallow convolutional network', 'fuzzy data with convolutional network',
 		'fully connective network', 'network with both two layers']
+line_shape = ['-', '--', '-.', ':']
 # labels = ['d', 's', 'f', 'fu', 'comb']
 idx = 0
 plot_len = 10
@@ -34,7 +35,7 @@ for record_file in record_files:
 	print(len(data))
 	data = data[0: plot_len]
 	epoch = [i for i in range(1, plot_len + 1)]
-	plt.plot(epoch, data, label=labels[idx])
+	plt.plot(epoch, data, label=labels[idx], ls=line_shape[idx])
 	idx += 1
 plt.legend(loc='upper right')
 plt.xlabel('Epoch')
